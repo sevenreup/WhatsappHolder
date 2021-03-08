@@ -56,9 +56,6 @@ var app = (function () {
     function element(name) {
         return document.createElement(name);
     }
-    function svg_element(name) {
-        return document.createElementNS('http://www.w3.org/2000/svg', name);
-    }
     function text(data) {
         return document.createTextNode(data);
     }
@@ -76,39 +73,6 @@ var app = (function () {
     }
     function children(element) {
         return Array.from(element.childNodes);
-    }
-    function claim_element(nodes, name, attributes, svg) {
-        for (let i = 0; i < nodes.length; i += 1) {
-            const node = nodes[i];
-            if (node.nodeName === name) {
-                let j = 0;
-                const remove = [];
-                while (j < node.attributes.length) {
-                    const attribute = node.attributes[j++];
-                    if (!attributes[attribute.name]) {
-                        remove.push(attribute.name);
-                    }
-                }
-                for (let k = 0; k < remove.length; k++) {
-                    node.removeAttribute(remove[k]);
-                }
-                return nodes.splice(i, 1)[0];
-            }
-        }
-        return svg ? svg_element(name) : element(name);
-    }
-    function claim_text(nodes, data) {
-        for (let i = 0; i < nodes.length; i += 1) {
-            const node = nodes[i];
-            if (node.nodeType === 3) {
-                node.data = '' + data;
-                return nodes.splice(i, 1)[0];
-            }
-        }
-        return text(data);
-    }
-    function claim_space(nodes) {
-        return claim_text(nodes, ' ');
     }
     function custom_event(type, detail) {
         const e = document.createEvent('CustomEvent');
@@ -301,9 +265,6 @@ var app = (function () {
     }
     function create_component(block) {
         block && block.c();
-    }
-    function claim_component(block, parent_nodes) {
-        block && block.l(parent_nodes);
     }
     function mount_component(component, target, anchor, customElement) {
         const { fragment, on_mount, on_destroy, after_update } = component.$$;
@@ -742,10 +703,6 @@ var app = (function () {
     			if (switch_instance) create_component(switch_instance.$$.fragment);
     			switch_instance_anchor = empty();
     		},
-    		l: function claim(nodes) {
-    			if (switch_instance) claim_component(switch_instance.$$.fragment, nodes);
-    			switch_instance_anchor = empty();
-    		},
     		m: function mount(target, anchor) {
     			if (switch_instance) {
     				mount_component(switch_instance, target, anchor);
@@ -841,10 +798,6 @@ var app = (function () {
     			if (switch_instance) create_component(switch_instance.$$.fragment);
     			switch_instance_anchor = empty();
     		},
-    		l: function claim(nodes) {
-    			if (switch_instance) claim_component(switch_instance.$$.fragment, nodes);
-    			switch_instance_anchor = empty();
-    		},
     		m: function mount(target, anchor) {
     			if (switch_instance) {
     				mount_component(switch_instance, target, anchor);
@@ -934,8 +887,7 @@ var app = (function () {
     			if_block_anchor = empty();
     		},
     		l: function claim(nodes) {
-    			if_block.l(nodes);
-    			if_block_anchor = empty();
+    			throw new Error_1("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
     			if_blocks[current_block_type_index].m(target, anchor);
@@ -1589,10 +1541,8 @@ var app = (function () {
     function create_fragment$2(ctx) {
     	let main;
     	let p;
-    	let t0;
     	let t1;
     	let a;
-    	let t2;
     	let mounted;
     	let dispose;
 
@@ -1600,40 +1550,23 @@ var app = (function () {
     		c: function create() {
     			main = element("main");
     			p = element("p");
-    			t0 = text("home");
+    			p.textContent = "home";
     			t1 = space();
     			a = element("a");
-    			t2 = text("The Little Prince");
-    			this.h();
-    		},
-    		l: function claim(nodes) {
-    			main = claim_element(nodes, "MAIN", {});
-    			var main_nodes = children(main);
-    			p = claim_element(main_nodes, "P", {});
-    			var p_nodes = children(p);
-    			t0 = claim_text(p_nodes, "home");
-    			p_nodes.forEach(detach_dev);
-    			t1 = claim_space(main_nodes);
-    			a = claim_element(main_nodes, "A", { href: true });
-    			var a_nodes = children(a);
-    			t2 = claim_text(a_nodes, "The Little Prince");
-    			a_nodes.forEach(detach_dev);
-    			main_nodes.forEach(detach_dev);
-    			this.h();
-    		},
-    		h: function hydrate() {
+    			a.textContent = "The Little Prince";
     			add_location(p, file$2, 5, 4, 83);
     			attr_dev(a, "href", "/chat");
     			add_location(a, file$2, 6, 0, 96);
     			add_location(main, file$2, 4, 0, 71);
     		},
+    		l: function claim(nodes) {
+    			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
+    		},
     		m: function mount(target, anchor) {
     			insert_dev(target, main, anchor);
     			append_dev(main, p);
-    			append_dev(p, t0);
     			append_dev(main, t1);
     			append_dev(main, a);
-    			append_dev(a, t2);
 
     			if (!mounted) {
     				dispose = action_destroyer(link.call(null, a));
@@ -1694,27 +1627,18 @@ var app = (function () {
 
     function create_fragment$1(ctx) {
     	let main;
-    	let t;
 
     	const block = {
     		c: function create() {
     			main = element("main");
-    			t = text("chat");
-    			this.h();
+    			main.textContent = "chat";
+    			add_location(main, file$1, 0, 0, 0);
     		},
     		l: function claim(nodes) {
-    			main = claim_element(nodes, "MAIN", {});
-    			var main_nodes = children(main);
-    			t = claim_text(main_nodes, "chat");
-    			main_nodes.forEach(detach_dev);
-    			this.h();
-    		},
-    		h: function hydrate() {
-    			add_location(main, file$1, 0, 0, 0);
+    			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, main, anchor);
-    			append_dev(main, t);
     		},
     		p: noop,
     		i: noop,
@@ -1788,25 +1712,11 @@ var app = (function () {
     			t2 = text("!");
     			t3 = space();
     			create_component(router.$$.fragment);
-    			this.h();
-    		},
-    		l: function claim(nodes) {
-    			main = claim_element(nodes, "MAIN", {});
-    			var main_nodes = children(main);
-    			h1 = claim_element(main_nodes, "H1", {});
-    			var h1_nodes = children(h1);
-    			t0 = claim_text(h1_nodes, "Hello ");
-    			t1 = claim_text(h1_nodes, /*name*/ ctx[0]);
-    			t2 = claim_text(h1_nodes, "!");
-    			h1_nodes.forEach(detach_dev);
-    			t3 = claim_space(main_nodes);
-    			claim_component(router.$$.fragment, main_nodes);
-    			main_nodes.forEach(detach_dev);
-    			this.h();
-    		},
-    		h: function hydrate() {
     			add_location(h1, file, 12, 2, 225);
     			add_location(main, file, 11, 0, 216);
+    		},
+    		l: function claim(nodes) {
+    			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, main, anchor);
