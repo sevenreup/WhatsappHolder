@@ -48,5 +48,6 @@
   }
   .main {
     grid-column-start: 2;
+    overflow: hidden;
   }
 </style>

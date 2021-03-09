@@ -23,6 +23,7 @@
     display: grid;
     grid-template-columns: 35% auto;
     height: 100%;
+    overflow: hidden;
   }
   .chat-content {
   }
