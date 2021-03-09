@@ -13,7 +13,6 @@
   $: {
     if (component || elementScroll) {
       const element = elementScroll ? elementScroll : component.parentNode;
-
       element.addEventListener("scroll", onScroll);
       element.addEventListener("resize", onScroll);
     }

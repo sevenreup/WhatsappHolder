@@ -21,7 +21,7 @@
 <style>
   .chat-grid {
     display: grid;
-    grid-template-columns: 35% auto;
+    grid-template-columns: 25% auto;
     height: 100%;
     overflow: hidden;
   }

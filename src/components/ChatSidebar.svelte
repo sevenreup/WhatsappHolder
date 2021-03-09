@@ -4,6 +4,7 @@
   import { List } from "smelte";
   import { push } from "svelte-spa-router";
   import InfiniteScroll from "./utils/InfiniteScroll.svelte";
+  import SearchBar from "./widgets/SearchBar.svelte";
 
   let page = 0;
   // but most likely, you'll have to store a token to fetch the next page
@@ -17,12 +18,12 @@
     // const response = await fetch(
     //   `https://api.openbrewerydb.org/breweries?by_city=los_angeles&page=${page}`
     // );
-    newBatch =  [
-    { id: "1", name: "Jon A" },
-    { id: "2", name: "Jon B" },
-    { id: "3", name: "Jon C" },
-    { id: "4", name: "Jon E" },
-  ];
+    newBatch = [
+      { id: "1", name: "Jon A" },
+      { id: "2", name: "Jon B" },
+      { id: "3", name: "Jon C" },
+      { id: "4", name: "Jon E" },
+    ];
     console.log(newBatch);
   }
 
@@ -34,31 +35,48 @@
   $: data = [...data, ...newBatch];
 
   let selected;
+  let chatList;
 </script>
 
-<nav>
-  <List bind:value={selected} items={data} dense navigation>
-    <li slot="item" let:item>
-      <div
-        class="cursor-pointer p-4 border-alert-50 border my-2 border-solid"
-        use:active={{
-          path: `/chat/${item.id}`,
-          className: "bg-alert-50",
-          inactiveClassName: "",
-        }}
-        on:click={() => {
-          selected = item.id;
-          push(`/chat/${item.id}`);
-        }}
-      >
-        {selected === item.id ? "👌" : "🙅‍"}
-        {item.name}
-      </div>
-    </li>
-  </List>
+<nav class="p-9">
+  <SearchBar />
+  <div bind:this={chatList}>
+    <List bind:value={selected} items={data} dense navigation>
+      <li slot="item" let:item>
+        <div
+          class="cursor-pointer rounded-3xl p-2 my-2 chat flex"
+          use:active={{
+            path: `/chat/${item.id}`,
+            className: "bg-gradient-to-r from-blue-600 to-blue-300 text-white",
+            inactiveClassName: "",
+          }}
+          on:click={() => {
+            selected = item.id;
+            push(`/chat/${item.id}`);
+          }}
+        >
+          <img
+            src="https://placeimg.com/80/80/animals"
+            alt={item.name}
+            class="rounded-full w-12 h-12 m-auto"
+          />
+          <div class="p-2">
+            <span class="subtitle-1 font-semibold">{item.name}</span>
+            <div class="flex">
+              <span class="w-10/12 truncate"
+                >This is a sample preview message</span
+              >
+              <span>19:08</span>
+            </div>
+          </div>
+        </div>
+      </li>
+    </List>
+  </div>
   <InfiniteScroll
     hasMore={newBatch.length}
     threshold={100}
+    elementScroll={chatList}
     on:loadMore={() => {
       page++;
       fetchData();
@@ -69,5 +87,8 @@
 <style>
   nav {
     overflow-y: scroll;
+  }
+
+  .chat {
   }
 </style>
