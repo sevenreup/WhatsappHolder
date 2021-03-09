@@ -13,7 +13,7 @@
 
 <main class="chat-grid">
   <ChatSidebar />
-  <section class="chat-content">
+  <section class="chat-content overflow-y-scroll">
     <Router {routes} {prefix} />
   </section>
 </main>

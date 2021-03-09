@@ -3,7 +3,7 @@
   import active from "svelte-spa-router/active";
   import { List } from "smelte";
   import { push } from "svelte-spa-router";
-  import InfiniteScroll from "./utils/InfiniteScroll.svelte";
+  import InfiniteScroll from "./widgets/list/InfiniteScroll.svelte";
   import SearchBar from "./widgets/SearchBar.svelte";
 
   let page = 0;

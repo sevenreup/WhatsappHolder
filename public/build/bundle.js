@@ -87,6 +87,41 @@ var app = (function () {
         return action_result && is_function(action_result.destroy) ? action_result.destroy : noop;
     }
 
+    const is_client = typeof window !== 'undefined';
+    let now = is_client
+        ? () => window.performance.now()
+        : () => Date.now();
+    let raf = is_client ? cb => requestAnimationFrame(cb) : noop;
+
+    const tasks = new Set();
+    function run_tasks(now) {
+        tasks.forEach(task => {
+            if (!task.c(now)) {
+                tasks.delete(task);
+                task.f();
+            }
+        });
+        if (tasks.size !== 0)
+            raf(run_tasks);
+    }
+    /**
+     * Creates a new task that runs on each raf frame
+     * until it returns a falsy value or is aborted
+     */
+    function loop(callback) {
+        let task;
+        if (tasks.size === 0)
+            raf(run_tasks);
+        return {
+            promise: new Promise(fulfill => {
+                tasks.add(task = { c: callback, f: fulfill });
+            }),
+            abort() {
+                tasks.delete(task);
+            }
+        };
+    }
+
     function append(target, node) {
         target.appendChild(node);
     }
@@ -145,11 +180,72 @@ var app = (function () {
             }
         }
     }
+    function set_custom_element_data(node, prop, value) {
+        if (prop in node) {
+            node[prop] = value;
+        }
+        else {
+            attr(node, prop, value);
+        }
+    }
     function children(element) {
         return Array.from(element.childNodes);
     }
     function set_style(node, key, value, important) {
         node.style.setProperty(key, value, important ? 'important' : '');
+    }
+    // unfortunately this can't be a constant as that wouldn't be tree-shakeable
+    // so we cache the result instead
+    let crossorigin;
+    function is_crossorigin() {
+        if (crossorigin === undefined) {
+            crossorigin = false;
+            try {
+                if (typeof window !== 'undefined' && window.parent) {
+                    void window.parent.document;
+                }
+            }
+            catch (error) {
+                crossorigin = true;
+            }
+        }
+        return crossorigin;
+    }
+    function add_resize_listener(node, fn) {
+        const computed_style = getComputedStyle(node);
+        if (computed_style.position === 'static') {
+            node.style.position = 'relative';
+        }
+        const iframe = element('iframe');
+        iframe.setAttribute('style', 'display: block; position: absolute; top: 0; left: 0; width: 100%; height: 100%; ' +
+            'overflow: hidden; border: 0; opacity: 0; pointer-events: none; z-index: -1;');
+        iframe.setAttribute('aria-hidden', 'true');
+        iframe.tabIndex = -1;
+        const crossorigin = is_crossorigin();
+        let unsubscribe;
+        if (crossorigin) {
+            iframe.src = "data:text/html,<script>onresize=function(){parent.postMessage(0,'*')}</script>";
+            unsubscribe = listen(window, 'message', (event) => {
+                if (event.source === iframe.contentWindow)
+                    fn();
+            });
+        }
+        else {
+            iframe.src = 'about:blank';
+            iframe.onload = () => {
+                unsubscribe = listen(iframe.contentWindow, 'resize', fn);
+            };
+        }
+        append(node, iframe);
+        return () => {
+            if (crossorigin) {
+                unsubscribe();
+            }
+            else if (unsubscribe && iframe.contentWindow) {
+                unsubscribe();
+            }
+            detach(iframe);
+        };
     }
     function toggle_class(element, name, toggle) {
         element.classList[toggle ? 'add' : 'remove'](name);
@@ -315,6 +411,96 @@ var app = (function () {
         : typeof globalThis !== 'undefined'
             ? globalThis
             : global);
+    function outro_and_destroy_block(block, lookup) {
+        transition_out(block, 1, 1, () => {
+            lookup.delete(block.key);
+        });
+    }
+    function update_keyed_each(old_blocks, dirty, get_key, dynamic, ctx, list, lookup, node, destroy, create_each_block, next, get_context) {
+        let o = old_blocks.length;
+        let n = list.length;
+        let i = o;
+        const old_indexes = {};
+        while (i--)
+            old_indexes[old_blocks[i].key] = i;
+        const new_blocks = [];
+        const new_lookup = new Map();
+        const deltas = new Map();
+        i = n;
+        while (i--) {
+            const child_ctx = get_context(ctx, list, i);
+            const key = get_key(child_ctx);
+            let block = lookup.get(key);
+            if (!block) {
+                block = create_each_block(key, child_ctx);
+                block.c();
+            }
+            else if (dynamic) {
+                block.p(child_ctx, dirty);
+            }
+            new_lookup.set(key, new_blocks[i] = block);
+            if (key in old_indexes)
+                deltas.set(key, Math.abs(i - old_indexes[key]));
+        }
+        const will_move = new Set();
+        const did_move = new Set();
+        function insert(block) {
+            transition_in(block, 1);
+            block.m(node, next);
+            lookup.set(block.key, block);
+            next = block.first;
+            n--;
+        }
+        while (o && n) {
+            const new_block = new_blocks[n - 1];
+            const old_block = old_blocks[o - 1];
+            const new_key = new_block.key;
+            const old_key = old_block.key;
+            if (new_block === old_block) {
+                // do nothing
+                next = new_block.first;
+                o--;
+                n--;
+            }
+            else if (!new_lookup.has(old_key)) {
+                // remove old block
+                destroy(old_block, lookup);
+                o--;
+            }
+            else if (!lookup.has(new_key) || will_move.has(new_key)) {
+                insert(new_block);
+            }
+            else if (did_move.has(old_key)) {
+                o--;
+            }
+            else if (deltas.get(new_key) > deltas.get(old_key)) {
+                did_move.add(new_key);
+                insert(new_block);
+            }
+            else {
+                will_move.add(old_key);
+                o--;
+            }
+        }
+        while (o--) {
+            const old_block = old_blocks[o];
+            if (!new_lookup.has(old_block.key))
+                destroy(old_block, lookup);
+        }
+        while (n)
+            insert(new_blocks[n - 1]);
+        return new_blocks;
+    }
+    function validate_each_keys(ctx, list, get_context, get_key) {
+        const keys = new Set();
+        for (let i = 0; i < list.length; i++) {
+            const key = get_key(get_context(ctx, list, i));
+            if (keys.has(key)) {
+                throw new Error('Cannot have duplicate keys in a keyed each');
+            }
+            keys.add(key);
+        }
+    }
 
     function get_spread_update(levels, updates) {
         const update = {};
@@ -789,7 +975,7 @@ var app = (function () {
 
     /* node_modules\svelte-spa-router\Router.svelte generated by Svelte v3.35.0 */
 
-    const { Error: Error_1, Object: Object_1, console: console_1$1 } = globals;
+    const { Error: Error_1, Object: Object_1, console: console_1$3 } = globals;
 
     // (209:0) {:else}
     function create_else_block$2(ctx) {
@@ -984,7 +1170,7 @@ var app = (function () {
     	return block;
     }
 
-    function create_fragment$f(ctx) {
+    function create_fragment$i(ctx) {
     	let current_block_type_index;
     	let if_block;
     	let if_block_anchor;
@@ -1057,7 +1243,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$f.name,
+    		id: create_fragment$i.name,
     		type: "component",
     		source: "",
     		ctx
@@ -1226,7 +1412,7 @@ var app = (function () {
     	window.location.hash = href;
     }
 
-    function instance$f($$self, $$props, $$invalidate) {
+    function instance$i($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots("Router", slots, []);
     	let { routes = {} } = $$props;
@@ -1525,7 +1711,7 @@ var app = (function () {
     	const writable_props = ["routes", "prefix", "restoreScrollState"];
 
     	Object_1.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1$1.warn(`<Router> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1$3.warn(`<Router> was created with unknown prop '${key}'`);
     	});
 
     	function routeEvent_handler(event) {
@@ -1615,7 +1801,7 @@ var app = (function () {
     	constructor(options) {
     		super(options);
 
-    		init(this, options, instance$f, create_fragment$f, safe_not_equal, {
+    		init(this, options, instance$i, create_fragment$i, safe_not_equal, {
     			routes: 3,
     			prefix: 4,
     			restoreScrollState: 5
@@ -1625,7 +1811,7 @@ var app = (function () {
     			component: this,
     			tagName: "Router",
     			options,
-    			id: create_fragment$f.name
+    			id: create_fragment$i.name
     		});
     	}
 
@@ -1764,9 +1950,9 @@ var app = (function () {
 
     /* node_modules\smelte\src\components\Icon\Icon.svelte generated by Svelte v3.35.0 */
 
-    const file$e = "node_modules\\smelte\\src\\components\\Icon\\Icon.svelte";
+    const file$h = "node_modules\\smelte\\src\\components\\Icon\\Icon.svelte";
 
-    function create_fragment$e(ctx) {
+    function create_fragment$h(ctx) {
     	let i;
     	let i_class_value;
     	let i_style_value;
@@ -1787,7 +1973,7 @@ var app = (function () {
     			toggle_class(i, "tip", /*tip*/ ctx[3]);
     			toggle_class(i, "text-base", /*small*/ ctx[0]);
     			toggle_class(i, "text-xs", /*xs*/ ctx[1]);
-    			add_location(i, file$e, 20, 0, 273);
+    			add_location(i, file$h, 20, 0, 273);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1856,7 +2042,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$e.name,
+    		id: create_fragment$h.name,
     		type: "component",
     		source: "",
     		ctx
@@ -1865,7 +2051,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$e($$self, $$props, $$invalidate) {
+    function instance$h($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots("Icon", slots, ['default']);
     	let { small = false } = $$props;
@@ -1911,7 +2097,7 @@ var app = (function () {
     	constructor(options) {
     		super(options);
 
-    		init(this, options, instance$e, create_fragment$e, safe_not_equal, {
+    		init(this, options, instance$h, create_fragment$h, safe_not_equal, {
     			small: 0,
     			xs: 1,
     			reverse: 2,
@@ -1923,7 +2109,7 @@ var app = (function () {
     			component: this,
     			tagName: "Icon",
     			options,
-    			id: create_fragment$e.name
+    			id: create_fragment$h.name
     		});
     	}
 
@@ -2111,7 +2297,7 @@ var app = (function () {
     }
 
     /* node_modules\smelte\src\components\Button\Button.svelte generated by Svelte v3.35.0 */
-    const file$d = "node_modules\\smelte\\src\\components\\Button\\Button.svelte";
+    const file$g = "node_modules\\smelte\\src\\components\\Button\\Button.svelte";
 
     // (153:0) {:else}
     function create_else_block$1(ctx) {
@@ -2144,7 +2330,7 @@ var app = (function () {
     			t = space();
     			if (default_slot) default_slot.c();
     			set_attributes(button, button_data);
-    			add_location(button, file$d, 153, 2, 4075);
+    			add_location(button, file$g, 153, 2, 4075);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, button, anchor);
@@ -2277,9 +2463,9 @@ var app = (function () {
     			t = space();
     			if (default_slot) default_slot.c();
     			set_attributes(button, button_data);
-    			add_location(button, file$d, 135, 4, 3762);
+    			add_location(button, file$g, 135, 4, 3762);
     			set_attributes(a, a_data);
-    			add_location(a, file$d, 131, 2, 3725);
+    			add_location(a, file$g, 131, 2, 3725);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, a, anchor);
@@ -2476,7 +2662,7 @@ var app = (function () {
     			props: {
     				class: /*iClasses*/ ctx[7],
     				small: /*small*/ ctx[4],
-    				$$slots: { default: [create_default_slot$3] },
+    				$$slots: { default: [create_default_slot$4] },
     				$$scope: { ctx }
     			},
     			$$inline: true
@@ -2527,7 +2713,7 @@ var app = (function () {
     }
 
     // (148:8) <Icon class={iClasses} {small}>
-    function create_default_slot$3(ctx) {
+    function create_default_slot$4(ctx) {
     	let t;
 
     	const block_1 = {
@@ -2547,7 +2733,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block: block_1,
-    		id: create_default_slot$3.name,
+    		id: create_default_slot$4.name,
     		type: "slot",
     		source: "(148:8) <Icon class={iClasses} {small}>",
     		ctx
@@ -2556,7 +2742,7 @@ var app = (function () {
     	return block_1;
     }
 
-    function create_fragment$d(ctx) {
+    function create_fragment$g(ctx) {
     	let current_block_type_index;
     	let if_block;
     	let if_block_anchor;
@@ -2629,7 +2815,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block: block_1,
-    		id: create_fragment$d.name,
+    		id: create_fragment$g.name,
     		type: "component",
     		source: "",
     		ctx
@@ -2648,7 +2834,7 @@ var app = (function () {
     const disabledDefault = "bg-gray-300 text-gray-500 dark:bg-dark-400 pointer-events-none hover:bg-gray-300 cursor-default";
     const elevationDefault = "hover:shadow shadow";
 
-    function instance$d($$self, $$props, $$invalidate) {
+    function instance$g($$self, $$props, $$invalidate) {
     	let normal;
     	let lighter;
     	let { $$slots: slots = {}, $$scope } = $$props;
@@ -2955,8 +3141,8 @@ var app = (function () {
     		init(
     			this,
     			options,
-    			instance$d,
-    			create_fragment$d,
+    			instance$g,
+    			create_fragment$g,
     			safe_not_equal,
     			{
     				value: 0,
@@ -2994,7 +3180,7 @@ var app = (function () {
     			component: this,
     			tagName: "Button",
     			options,
-    			id: create_fragment$d.name
+    			id: create_fragment$g.name
     		});
     	}
 
@@ -3215,8 +3401,12 @@ var app = (function () {
     	}
     }
 
+    function cubicInOut(t) {
+        return t < 0.5 ? 4.0 * t * t * t : 0.5 * Math.pow(2.0 * t - 2.0, 3.0) + 1.0;
+    }
+
     /* node_modules\smelte\src\components\List\ListItem.svelte generated by Svelte v3.35.0 */
-    const file$c = "node_modules\\smelte\\src\\components\\List\\ListItem.svelte";
+    const file$f = "node_modules\\smelte\\src\\components\\List\\ListItem.svelte";
 
     // (59:2) {#if icon}
     function create_if_block_1(ctx) {
@@ -3227,7 +3417,7 @@ var app = (function () {
     			props: {
     				class: "pr-6",
     				small: /*dense*/ ctx[3],
-    				$$slots: { default: [create_default_slot$2] },
+    				$$slots: { default: [create_default_slot$3] },
     				$$scope: { ctx }
     			},
     			$$inline: true
@@ -3277,7 +3467,7 @@ var app = (function () {
     }
 
     // (60:4) <Icon       class="pr-6"       small={dense}     >
-    function create_default_slot$2(ctx) {
+    function create_default_slot$3(ctx) {
     	let t;
 
     	const block = {
@@ -3297,7 +3487,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_default_slot$2.name,
+    		id: create_default_slot$3.name,
     		type: "slot",
     		source: "(60:4) <Icon       class=\\\"pr-6\\\"       small={dense}     >",
     		ctx
@@ -3307,7 +3497,7 @@ var app = (function () {
     }
 
     // (70:12) {text}
-    function fallback_block$1(ctx) {
+    function fallback_block$2(ctx) {
     	let t;
 
     	const block = {
@@ -3327,7 +3517,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: fallback_block$1.name,
+    		id: fallback_block$2.name,
     		type: "fallback",
     		source: "(70:12) {text}",
     		ctx
@@ -3346,7 +3536,7 @@ var app = (function () {
     			div = element("div");
     			t = text(/*subheading*/ ctx[2]);
     			attr_dev(div, "class", /*subheadingClasses*/ ctx[5]);
-    			add_location(div, file$c, 72, 6, 1808);
+    			add_location(div, file$f, 72, 6, 1808);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -3375,7 +3565,7 @@ var app = (function () {
     	return block;
     }
 
-    function create_fragment$c(ctx) {
+    function create_fragment$f(ctx) {
     	let li;
     	let t0;
     	let div1;
@@ -3388,7 +3578,7 @@ var app = (function () {
     	let if_block0 = /*icon*/ ctx[0] && create_if_block_1(ctx);
     	const default_slot_template = /*#slots*/ ctx[20].default;
     	const default_slot = create_slot(default_slot_template, ctx, /*$$scope*/ ctx[22], null);
-    	const default_slot_or_fallback = default_slot || fallback_block$1(ctx);
+    	const default_slot_or_fallback = default_slot || fallback_block$2(ctx);
     	let if_block1 = /*subheading*/ ctx[2] && create_if_block$1(ctx);
 
     	const block = {
@@ -3402,12 +3592,12 @@ var app = (function () {
     			t1 = space();
     			if (if_block1) if_block1.c();
     			attr_dev(div0, "class", div0_class_value = /*$$props*/ ctx[9].class);
-    			add_location(div0, file$c, 68, 4, 1716);
+    			add_location(div0, file$f, 68, 4, 1716);
     			attr_dev(div1, "class", "flex flex-col p-0");
-    			add_location(div1, file$c, 67, 2, 1680);
+    			add_location(div1, file$f, 67, 2, 1680);
     			attr_dev(li, "class", /*c*/ ctx[6]);
     			attr_dev(li, "tabindex", /*tabindex*/ ctx[4]);
-    			add_location(li, file$c, 51, 0, 1479);
+    			add_location(li, file$f, 51, 0, 1479);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -3520,7 +3710,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$c.name,
+    		id: create_fragment$f.name,
     		type: "component",
     		source: "",
     		ctx
@@ -3533,7 +3723,7 @@ var app = (function () {
     const selectedClassesDefault = "bg-gray-200 dark:bg-primary-transLight";
     const subheadingClassesDefault = "text-gray-600 p-0 text-sm";
 
-    function instance$c($$self, $$props, $$invalidate) {
+    function instance$f($$self, $$props, $$invalidate) {
     	let c;
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots("ListItem", slots, ['default']);
@@ -3676,7 +3866,7 @@ var app = (function () {
     	constructor(options) {
     		super(options);
 
-    		init(this, options, instance$c, create_fragment$c, safe_not_equal, {
+    		init(this, options, instance$f, create_fragment$f, safe_not_equal, {
     			icon: 0,
     			id: 11,
     			value: 10,
@@ -3699,7 +3889,7 @@ var app = (function () {
     			component: this,
     			tagName: "ListItem",
     			options,
-    			id: create_fragment$c.name
+    			id: create_fragment$f.name
     		});
     	}
 
@@ -3833,9 +4023,9 @@ var app = (function () {
     }
 
     /* node_modules\smelte\src\components\List\List.svelte generated by Svelte v3.35.0 */
-    const file$b = "node_modules\\smelte\\src\\components\\List\\List.svelte";
+    const file$e = "node_modules\\smelte\\src\\components\\List\\List.svelte";
 
-    function get_each_context$1(ctx, list, i) {
+    function get_each_context$2(ctx, list, i) {
     	const child_ctx = ctx.slice();
     	child_ctx[6] = list[i];
     	child_ctx[22] = i;
@@ -3925,7 +4115,7 @@ var app = (function () {
     	let current;
     	const item_slot_template = /*#slots*/ ctx[12].item;
     	const item_slot = create_slot(item_slot_template, ctx, /*$$scope*/ ctx[18], get_item_slot_context);
-    	const item_slot_or_fallback = item_slot || fallback_block(ctx);
+    	const item_slot_or_fallback = item_slot || fallback_block$1(ctx);
 
     	const block = {
     		c: function create() {
@@ -4019,9 +4209,9 @@ var app = (function () {
     		{ itemClasses: /*itemClasses*/ ctx[5] },
     		/*item*/ ctx[6],
     		{ tabindex: /*i*/ ctx[22] + 1 },
-    		{ id: id(/*item*/ ctx[6]) },
+    		{ id: id$1(/*item*/ ctx[6]) },
     		{
-    			selected: /*value*/ ctx[0] === id(/*item*/ ctx[6])
+    			selected: /*value*/ ctx[0] === id$1(/*item*/ ctx[6])
     		},
     		{ dense: /*dense*/ ctx[2] }
     	];
@@ -4067,9 +4257,9 @@ var app = (function () {
     					dirty & /*itemClasses*/ 32 && { itemClasses: /*itemClasses*/ ctx[5] },
     					dirty & /*items*/ 2 && get_spread_object(/*item*/ ctx[6]),
     					listitem_spread_levels[3],
-    					dirty & /*id, items*/ 2 && { id: id(/*item*/ ctx[6]) },
+    					dirty & /*id, items*/ 2 && { id: id$1(/*item*/ ctx[6]) },
     					dirty & /*value, id, items*/ 3 && {
-    						selected: /*value*/ ctx[0] === id(/*item*/ ctx[6])
+    						selected: /*value*/ ctx[0] === id$1(/*item*/ ctx[6])
     					},
     					dirty & /*dense*/ 4 && { dense: /*dense*/ ctx[2] }
     				])
@@ -4114,7 +4304,7 @@ var app = (function () {
     }
 
     // (50:10) <ListItem bind:value {...item} id={id(item)} {dense} on:change>
-    function create_default_slot$1(ctx) {
+    function create_default_slot$2(ctx) {
     	let t_value = /*item*/ ctx[6].text + "";
     	let t;
 
@@ -4135,7 +4325,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_default_slot$1.name,
+    		id: create_default_slot$2.name,
     		type: "slot",
     		source: "(50:10) <ListItem bind:value {...item} id={id(item)} {dense} on:change>",
     		ctx
@@ -4145,21 +4335,21 @@ var app = (function () {
     }
 
     // (48:47)          
-    function fallback_block(ctx) {
+    function fallback_block$1(ctx) {
     	let a;
     	let listitem;
     	let updating_value;
     	let a_href_value;
     	let t;
     	let current;
-    	const listitem_spread_levels = [/*item*/ ctx[6], { id: id(/*item*/ ctx[6]) }, { dense: /*dense*/ ctx[2] }];
+    	const listitem_spread_levels = [/*item*/ ctx[6], { id: id$1(/*item*/ ctx[6]) }, { dense: /*dense*/ ctx[2] }];
 
     	function listitem_value_binding(value) {
     		/*listitem_value_binding*/ ctx[13](value);
     	}
 
     	let listitem_props = {
-    		$$slots: { default: [create_default_slot$1] },
+    		$$slots: { default: [create_default_slot$2] },
     		$$scope: { ctx }
     	};
 
@@ -4182,7 +4372,7 @@ var app = (function () {
     			t = space();
     			attr_dev(a, "tabindex", /*i*/ ctx[22] + 1);
     			attr_dev(a, "href", a_href_value = /*item*/ ctx[6].to);
-    			add_location(a, file$b, 48, 8, 1154);
+    			add_location(a, file$e, 48, 8, 1154);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, a, anchor);
@@ -4194,7 +4384,7 @@ var app = (function () {
     			const listitem_changes = (dirty & /*items, id, dense*/ 6)
     			? get_spread_update(listitem_spread_levels, [
     					dirty & /*items*/ 2 && get_spread_object(/*item*/ ctx[6]),
-    					dirty & /*id, items*/ 2 && { id: id(/*item*/ ctx[6]) },
+    					dirty & /*id, items*/ 2 && { id: id$1(/*item*/ ctx[6]) },
     					dirty & /*dense*/ 4 && { dense: /*dense*/ ctx[2] }
     				])
     			: {};
@@ -4233,7 +4423,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: fallback_block.name,
+    		id: fallback_block$1.name,
     		type: "fallback",
     		source: "(48:47)          ",
     		ctx
@@ -4243,7 +4433,7 @@ var app = (function () {
     }
 
     // (46:2) {#each items as item, i}
-    function create_each_block$1(ctx) {
+    function create_each_block$2(ctx) {
     	let current_block_type_index;
     	let if_block;
     	let if_block_anchor;
@@ -4313,7 +4503,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_each_block$1.name,
+    		id: create_each_block$2.name,
     		type: "each",
     		source: "(46:2) {#each items as item, i}",
     		ctx
@@ -4322,7 +4512,7 @@ var app = (function () {
     	return block;
     }
 
-    function create_fragment$b(ctx) {
+    function create_fragment$e(ctx) {
     	let ul;
     	let current;
     	let each_value = /*items*/ ctx[1];
@@ -4330,7 +4520,7 @@ var app = (function () {
     	let each_blocks = [];
 
     	for (let i = 0; i < each_value.length; i += 1) {
-    		each_blocks[i] = create_each_block$1(get_each_context$1(ctx, each_value, i));
+    		each_blocks[i] = create_each_block$2(get_each_context$2(ctx, each_value, i));
     	}
 
     	const out = i => transition_out(each_blocks[i], 1, 1, () => {
@@ -4347,7 +4537,7 @@ var app = (function () {
 
     			attr_dev(ul, "class", /*c*/ ctx[7]);
     			toggle_class(ul, "rounded-t-none", /*select*/ ctx[3]);
-    			add_location(ul, file$b, 44, 0, 994);
+    			add_location(ul, file$e, 44, 0, 994);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -4368,13 +4558,13 @@ var app = (function () {
     				let i;
 
     				for (i = 0; i < each_value.length; i += 1) {
-    					const child_ctx = get_each_context$1(ctx, each_value, i);
+    					const child_ctx = get_each_context$2(ctx, each_value, i);
 
     					if (each_blocks[i]) {
     						each_blocks[i].p(child_ctx, dirty);
     						transition_in(each_blocks[i], 1);
     					} else {
-    						each_blocks[i] = create_each_block$1(child_ctx);
+    						each_blocks[i] = create_each_block$2(child_ctx);
     						each_blocks[i].c();
     						transition_in(each_blocks[i], 1);
     						each_blocks[i].m(ul, null);
@@ -4424,7 +4614,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$b.name,
+    		id: create_fragment$e.name,
     		type: "component",
     		source: "",
     		ctx
@@ -4435,7 +4625,7 @@ var app = (function () {
 
     const classesDefault = "py-2 rounded";
 
-    function id(i) {
+    function id$1(i) {
     	if (i.id !== undefined) return i.id;
     	if (i.value !== undefined) return i.value;
     	if (i.to !== undefined) return i.to;
@@ -4449,7 +4639,7 @@ var app = (function () {
     	return i;
     }
 
-    function instance$b($$self, $$props, $$invalidate) {
+    function instance$e($$self, $$props, $$invalidate) {
     	let c;
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots("List", slots, ['item']);
@@ -4513,7 +4703,7 @@ var app = (function () {
     		itemClasses,
     		classesDefault,
     		classes,
-    		id,
+    		id: id$1,
     		getText,
     		cb,
     		c
@@ -4566,7 +4756,7 @@ var app = (function () {
     	constructor(options) {
     		super(options);
 
-    		init(this, options, instance$b, create_fragment$b, safe_not_equal, {
+    		init(this, options, instance$e, create_fragment$e, safe_not_equal, {
     			items: 1,
     			value: 0,
     			dense: 2,
@@ -4584,7 +4774,7 @@ var app = (function () {
     			component: this,
     			tagName: "List",
     			options,
-    			id: create_fragment$b.name
+    			id: create_fragment$e.name
     		});
     	}
 
@@ -4677,17 +4867,17 @@ var app = (function () {
     	}
     }
 
-    /* src\components\utils\InfiniteScroll.svelte generated by Svelte v3.35.0 */
-    const file$a = "src\\components\\utils\\InfiniteScroll.svelte";
+    /* src\components\widgets\list\InfiniteScroll.svelte generated by Svelte v3.35.0 */
+    const file$d = "src\\components\\widgets\\list\\InfiniteScroll.svelte";
 
-    function create_fragment$a(ctx) {
+    function create_fragment$d(ctx) {
     	let div;
 
     	const block = {
     		c: function create() {
     			div = element("div");
     			set_style(div, "width", "0px");
-    			add_location(div, file$a, 47, 0, 1251);
+    			add_location(div, file$d, 47, 0, 1251);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -4707,7 +4897,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$a.name,
+    		id: create_fragment$d.name,
     		type: "component",
     		source: "",
     		ctx
@@ -4716,7 +4906,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$a($$self, $$props, $$invalidate) {
+    function instance$d($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots("InfiniteScroll", slots, []);
     	let { threshold = 0 } = $$props;
@@ -4819,7 +5009,7 @@ var app = (function () {
     	constructor(options) {
     		super(options);
 
-    		init(this, options, instance$a, create_fragment$a, safe_not_equal, {
+    		init(this, options, instance$d, create_fragment$d, safe_not_equal, {
     			threshold: 1,
     			horizontal: 2,
     			elementScroll: 3,
@@ -4830,7 +5020,7 @@ var app = (function () {
     			component: this,
     			tagName: "InfiniteScroll",
     			options,
-    			id: create_fragment$a.name
+    			id: create_fragment$d.name
     		});
 
     		const { ctx } = this.$$;
@@ -4876,9 +5066,9 @@ var app = (function () {
 
     /* src\components\widgets\SearchBar.svelte generated by Svelte v3.35.0 */
 
-    const file$9 = "src\\components\\widgets\\SearchBar.svelte";
+    const file$c = "src\\components\\widgets\\SearchBar.svelte";
 
-    function create_fragment$9(ctx) {
+    function create_fragment$c(ctx) {
     	let div1;
     	let form;
     	let input;
@@ -4898,15 +5088,15 @@ var app = (function () {
     			attr_dev(input, "type", "text");
     			attr_dev(input, "placeholder", "Search");
     			attr_dev(input, "class", "pb-2 pt-2 rounded-full text-black dark:text-gray-100 w-full caret-primary-500 bg-gray-100 dark:bg-dark-600 pr-4 pl-10 ");
-    			add_location(input, file$9, 2, 4, 58);
+    			add_location(input, file$c, 2, 4, 58);
     			attr_dev(i, "class", "material-icons icon text-xl select-none duration-200 ease-in");
-    			add_location(i, file$9, 10, 6, 357);
+    			add_location(i, file$c, 10, 6, 357);
     			attr_dev(div0, "class", "absolute left-0 top-0 pb-2 pl-2 pt-2 text-xs text-gray-700 z-10");
-    			add_location(div0, file$9, 7, 4, 259);
+    			add_location(div0, file$c, 7, 4, 259);
     			attr_dev(form, "action", "");
-    			add_location(form, file$9, 1, 2, 36);
+    			add_location(form, file$c, 1, 2, 36);
     			attr_dev(div1, "class", "searchbar relative");
-    			add_location(div1, file$9, 0, 0, 0);
+    			add_location(div1, file$c, 0, 0, 0);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -4929,7 +5119,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$9.name,
+    		id: create_fragment$c.name,
     		type: "component",
     		source: "",
     		ctx
@@ -4938,7 +5128,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$9($$self, $$props) {
+    function instance$c($$self, $$props) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots("SearchBar", slots, []);
     	const writable_props = [];
@@ -4953,21 +5143,21 @@ var app = (function () {
     class SearchBar extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$9, create_fragment$9, safe_not_equal, {});
+    		init(this, options, instance$c, create_fragment$c, safe_not_equal, {});
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
     			tagName: "SearchBar",
     			options,
-    			id: create_fragment$9.name
+    			id: create_fragment$c.name
     		});
     	}
     }
 
     /* src\components\ChatSidebar.svelte generated by Svelte v3.35.0 */
 
-    const { console: console_1 } = globals;
-    const file$8 = "src\\components\\ChatSidebar.svelte";
+    const { console: console_1$2 } = globals;
+    const file$b = "src\\components\\ChatSidebar.svelte";
 
     // (45:6) 
     function create_item_slot(ctx) {
@@ -5013,20 +5203,20 @@ var app = (function () {
     			if (img.src !== (img_src_value = "https://placeimg.com/80/80/animals")) attr_dev(img, "src", img_src_value);
     			attr_dev(img, "alt", img_alt_value = /*item*/ ctx[11].name);
     			attr_dev(img, "class", "rounded-full w-12 h-12 m-auto");
-    			add_location(img, file$8, 57, 10, 1627);
+    			add_location(img, file$b, 57, 10, 1634);
     			attr_dev(span0, "class", "subtitle-1 font-semibold");
-    			add_location(span0, file$8, 63, 12, 1822);
+    			add_location(span0, file$b, 63, 12, 1829);
     			attr_dev(span1, "class", "w-10/12 truncate");
-    			add_location(span1, file$8, 65, 14, 1927);
-    			add_location(span2, file$8, 68, 14, 2047);
+    			add_location(span1, file$b, 65, 14, 1934);
+    			add_location(span2, file$b, 68, 14, 2054);
     			attr_dev(div0, "class", "flex");
-    			add_location(div0, file$8, 64, 12, 1893);
+    			add_location(div0, file$b, 64, 12, 1900);
     			attr_dev(div1, "class", "p-2");
-    			add_location(div1, file$8, 62, 10, 1791);
+    			add_location(div1, file$b, 62, 10, 1798);
     			attr_dev(div2, "class", "cursor-pointer rounded-3xl p-2 my-2 chat flex svelte-1riymeu");
-    			add_location(div2, file$8, 45, 8, 1225);
+    			add_location(div2, file$b, 45, 8, 1232);
     			attr_dev(li, "slot", "item");
-    			add_location(li, file$8, 44, 6, 1190);
+    			add_location(li, file$b, 44, 6, 1197);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, li, anchor);
@@ -5088,7 +5278,7 @@ var app = (function () {
     	return block;
     }
 
-    function create_fragment$8(ctx) {
+    function create_fragment$b(ctx) {
     	let nav;
     	let searchbar;
     	let t0;
@@ -5145,9 +5335,9 @@ var app = (function () {
     			create_component(list.$$.fragment);
     			t1 = space();
     			create_component(infinitescroll.$$.fragment);
-    			add_location(div, file$8, 42, 2, 1092);
+    			add_location(div, file$b, 42, 2, 1099);
     			attr_dev(nav, "class", "p-9 svelte-1riymeu");
-    			add_location(nav, file$8, 40, 0, 1054);
+    			add_location(nav, file$b, 40, 0, 1061);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -5207,7 +5397,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$8.name,
+    		id: create_fragment$b.name,
     		type: "component",
     		source: "",
     		ctx
@@ -5216,7 +5406,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$8($$self, $$props, $$invalidate) {
+    function instance$b($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots("ChatSidebar", slots, []);
     	let page = 0;
@@ -5254,7 +5444,7 @@ var app = (function () {
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1.warn(`<ChatSidebar> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1$2.warn(`<ChatSidebar> was created with unknown prop '${key}'`);
     	});
 
     	const click_handler = item => {
@@ -5331,29 +5521,29 @@ var app = (function () {
     class ChatSidebar extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$8, create_fragment$8, safe_not_equal, {});
+    		init(this, options, instance$b, create_fragment$b, safe_not_equal, {});
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
     			tagName: "ChatSidebar",
     			options,
-    			id: create_fragment$8.name
+    			id: create_fragment$b.name
     		});
     	}
     }
 
     /* src\pages\chats\ChatsEmpty.svelte generated by Svelte v3.35.0 */
 
-    const file$7 = "src\\pages\\chats\\ChatsEmpty.svelte";
+    const file$a = "src\\pages\\chats\\ChatsEmpty.svelte";
 
-    function create_fragment$7(ctx) {
+    function create_fragment$a(ctx) {
     	let main;
 
     	const block = {
     		c: function create() {
     			main = element("main");
     			main.textContent = "empty";
-    			add_location(main, file$7, 4, 0, 25);
+    			add_location(main, file$a, 4, 0, 25);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -5371,7 +5561,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$7.name,
+    		id: create_fragment$a.name,
     		type: "component",
     		source: "",
     		ctx
@@ -5380,7 +5570,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$7($$self, $$props) {
+    function instance$a($$self, $$props) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots("ChatsEmpty", slots, []);
     	const writable_props = [];
@@ -5395,49 +5585,1408 @@ var app = (function () {
     class ChatsEmpty extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$7, create_fragment$7, safe_not_equal, {});
+    		init(this, options, instance$a, create_fragment$a, safe_not_equal, {});
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
     			tagName: "ChatsEmpty",
     			options,
-    			id: create_fragment$7.name
+    			id: create_fragment$a.name
     		});
     	}
     }
 
-    /* src\pages\chats\ChatSingle.svelte generated by Svelte v3.35.0 */
+    var _ = {
+      $(selector) {
+        if (typeof selector === "string") {
+          return document.querySelector(selector);
+        }
+        return selector;
+      },
+      extend(...args) {
+        return Object.assign(...args);
+      },
+      cumulativeOffset(element) {
+        let top = 0;
+        let left = 0;
 
+        do {
+          top += element.offsetTop || 0;
+          left += element.offsetLeft || 0;
+          element = element.offsetParent;
+        } while (element);
+
+        return {
+          top: top,
+          left: left
+        };
+      },
+      directScroll(element) {
+        return element && element !== document && element !== document.body;
+      },
+      scrollTop(element, value) {
+        let inSetter = value !== undefined;
+        if (this.directScroll(element)) {
+          return inSetter ? (element.scrollTop = value) : element.scrollTop;
+        } else {
+          return inSetter
+            ? (document.documentElement.scrollTop = document.body.scrollTop = value)
+            : window.pageYOffset ||
+                document.documentElement.scrollTop ||
+                document.body.scrollTop ||
+                0;
+        }
+      },
+      scrollLeft(element, value) {
+        let inSetter = value !== undefined;
+        if (this.directScroll(element)) {
+          return inSetter ? (element.scrollLeft = value) : element.scrollLeft;
+        } else {
+          return inSetter
+            ? (document.documentElement.scrollLeft = document.body.scrollLeft = value)
+            : window.pageXOffset ||
+                document.documentElement.scrollLeft ||
+                document.body.scrollLeft ||
+                0;
+        }
+      }
+    };
+
+    const defaultOptions = {
+      container: "body",
+      duration: 500,
+      delay: 0,
+      offset: 0,
+      easing: cubicInOut,
+      onStart: noop,
+      onDone: noop,
+      onAborting: noop,
+      scrollX: false,
+      scrollY: true
+    };
+
+    const _scrollTo = options => {
+      let {
+        offset,
+        duration,
+        delay,
+        easing,
+        x=0,
+        y=0,
+        scrollX,
+        scrollY,
+        onStart,
+        onDone,
+        container,
+        onAborting,
+        element
+      } = options;
+
+      if (typeof offset === "function") {
+        offset = offset();
+      }
+
+      var cumulativeOffsetContainer = _.cumulativeOffset(container);
+      var cumulativeOffsetTarget = element
+        ? _.cumulativeOffset(element)
+        : { top: y, left: x };
+
+      var initialX = _.scrollLeft(container);
+      var initialY = _.scrollTop(container);
+
+      var targetX =
+        cumulativeOffsetTarget.left - cumulativeOffsetContainer.left + offset;
+      var targetY =
+        cumulativeOffsetTarget.top - cumulativeOffsetContainer.top + offset;
+
+      var diffX = targetX - initialX;
+    	var diffY = targetY - initialY;
+
+      let scrolling = true;
+      let started = false;
+      let start_time = now() + delay;
+      let end_time = start_time + duration;
+
+      function scrollToTopLeft(element, top, left) {
+        if (scrollX) _.scrollLeft(element, left);
+        if (scrollY) _.scrollTop(element, top);
+      }
+
+      function start(delayStart) {
+        if (!delayStart) {
+          started = true;
+          onStart(element, {x, y});
+        }
+      }
+
+      function tick(progress) {
+        scrollToTopLeft(
+          container,
+          initialY + diffY * progress,
+          initialX + diffX * progress
+        );
+      }
+
+      function stop() {
+        scrolling = false;
+      }
+
+      loop(now => {
+        if (!started && now >= start_time) {
+          start(false);
+        }
+
+        if (started && now >= end_time) {
+          tick(1);
+          stop();
+          onDone(element, {x, y});
+        }
+
+        if (!scrolling) {
+          onAborting(element, {x, y});
+          return false;
+        }
+        if (started) {
+          const p = now - start_time;
+          const t = 0 + 1 * easing(p / duration);
+          tick(t);
+        }
+
+        return true;
+      });
+
+      start(delay);
+
+      tick(0);
+
+      return stop;
+    };
+
+    const proceedOptions = options => {
+    	let opts = _.extend({}, defaultOptions, options);
+      opts.container = _.$(opts.container);
+      opts.element = _.$(opts.element);
+      return opts;
+    };
+
+    const scrollContainerHeight = containerElement => {
+      if (
+        containerElement &&
+        containerElement !== document &&
+        containerElement !== document.body
+      ) {
+        return containerElement.scrollHeight - containerElement.offsetHeight;
+      } else {
+        let body = document.body;
+        let html = document.documentElement;
+
+        return Math.max(
+          body.scrollHeight,
+          body.offsetHeight,
+          html.clientHeight,
+          html.scrollHeight,
+          html.offsetHeight
+        );
+      }
+    };
+
+    const setGlobalOptions = options => {
+    	_.extend(defaultOptions, options || {});
+    };
+
+    const scrollTo = options => {
+      return _scrollTo(proceedOptions(options));
+    };
+
+    const scrollToBottom = options => {
+      options = proceedOptions(options);
+
+      return _scrollTo(
+        _.extend(options, {
+          element: null,
+          y: scrollContainerHeight(options.container)
+        })
+      );
+    };
+
+    const scrollToTop = options => {
+      options = proceedOptions(options);
+
+      return _scrollTo(
+        _.extend(options, {
+          element: null,
+          y: 0
+        })
+      );
+    };
+
+    const makeScrollToAction = scrollToFunc => {
+      return (node, options) => {
+        let current = options;
+        const handle = e => {
+          e.preventDefault();
+          scrollToFunc(
+            typeof current === "string" ? { element: current } : current
+          );
+        };
+        node.addEventListener("click", handle);
+        node.addEventListener("touchstart", handle);
+        return {
+          update(options) {
+            current = options;
+          },
+          destroy() {
+            node.removeEventListener("click", handle);
+            node.removeEventListener("touchstart", handle);
+          }
+        };
+      };
+    };
+
+    const scrollto = makeScrollToAction(scrollTo);
+    const scrolltotop = makeScrollToAction(scrollToTop);
+    const scrolltobottom = makeScrollToAction(scrollToBottom);
+
+    var animateScroll = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        setGlobalOptions: setGlobalOptions,
+        scrollTo: scrollTo,
+        scrollToBottom: scrollToBottom,
+        scrollToTop: scrollToTop,
+        makeScrollToAction: makeScrollToAction,
+        scrollto: scrollto,
+        scrolltotop: scrolltotop,
+        scrolltobottom: scrolltobottom
+    });
+
+    /* src\components\widgets\list\VirtualList.svelte generated by Svelte v3.35.0 */
+
+    const { console: console_1$1 } = globals;
+    const file$9 = "src\\components\\widgets\\list\\VirtualList.svelte";
+
+    function get_each_context$1(ctx, list, i) {
+    	const child_ctx = ctx.slice();
+    	child_ctx[24] = list[i];
+    	return child_ctx;
+    }
+
+    const get_default_slot_changes = dirty => ({ item: dirty & /*visible*/ 32 });
+    const get_default_slot_context = ctx => ({ item: /*row*/ ctx[24].data });
+
+    // (157:30) Missing template
+    function fallback_block(ctx) {
+    	let t;
+
+    	const block = {
+    		c: function create() {
+    			t = text("Missing template");
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, t, anchor);
+    		},
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(t);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: fallback_block.name,
+    		type: "fallback",
+    		source: "(157:30) Missing template",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    // (155:4) {#each visible as row (row.index)}
+    function create_each_block$1(key_1, ctx) {
+    	let svelte_virtual_list_row;
+    	let t;
+    	let svelte_virtual_list_row_id_value;
+    	let current;
+    	const default_slot_template = /*#slots*/ ctx[16].default;
+    	const default_slot = create_slot(default_slot_template, ctx, /*$$scope*/ ctx[15], get_default_slot_context);
+    	const default_slot_or_fallback = default_slot || fallback_block(ctx);
+
+    	const block = {
+    		key: key_1,
+    		first: null,
+    		c: function create() {
+    			svelte_virtual_list_row = element("svelte-virtual-list-row");
+    			if (default_slot_or_fallback) default_slot_or_fallback.c();
+    			t = space();
+    			set_custom_element_data(svelte_virtual_list_row, "id", svelte_virtual_list_row_id_value = "post-" + /*row*/ ctx[24].index);
+    			set_custom_element_data(svelte_virtual_list_row, "class", "svelte-13thbeo");
+    			add_location(svelte_virtual_list_row, file$9, 155, 6, 3652);
+    			this.first = svelte_virtual_list_row;
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, svelte_virtual_list_row, anchor);
+
+    			if (default_slot_or_fallback) {
+    				default_slot_or_fallback.m(svelte_virtual_list_row, null);
+    			}
+
+    			append_dev(svelte_virtual_list_row, t);
+    			current = true;
+    		},
+    		p: function update(new_ctx, dirty) {
+    			ctx = new_ctx;
+
+    			if (default_slot) {
+    				if (default_slot.p && dirty & /*$$scope, visible*/ 32800) {
+    					update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[15], dirty, get_default_slot_changes, get_default_slot_context);
+    				}
+    			}
+
+    			if (!current || dirty & /*visible*/ 32 && svelte_virtual_list_row_id_value !== (svelte_virtual_list_row_id_value = "post-" + /*row*/ ctx[24].index)) {
+    				set_custom_element_data(svelte_virtual_list_row, "id", svelte_virtual_list_row_id_value);
+    			}
+    		},
+    		i: function intro(local) {
+    			if (current) return;
+    			transition_in(default_slot_or_fallback, local);
+    			current = true;
+    		},
+    		o: function outro(local) {
+    			transition_out(default_slot_or_fallback, local);
+    			current = false;
+    		},
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(svelte_virtual_list_row);
+    			if (default_slot_or_fallback) default_slot_or_fallback.d(detaching);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_each_block$1.name,
+    		type: "each",
+    		source: "(155:4) {#each visible as row (row.index)}",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    function create_fragment$9(ctx) {
+    	let svelte_virtual_list_viewport;
+    	let svelte_virtual_list_contents;
+    	let each_blocks = [];
+    	let each_1_lookup = new Map();
+    	let svelte_virtual_list_viewport_resize_listener;
+    	let current;
+    	let mounted;
+    	let dispose;
+    	let each_value = /*visible*/ ctx[5];
+    	validate_each_argument(each_value);
+    	const get_key = ctx => /*row*/ ctx[24].index;
+    	validate_each_keys(ctx, each_value, get_each_context$1, get_key);
+
+    	for (let i = 0; i < each_value.length; i += 1) {
+    		let child_ctx = get_each_context$1(ctx, each_value, i);
+    		let key = get_key(child_ctx);
+    		each_1_lookup.set(key, each_blocks[i] = create_each_block$1(key, child_ctx));
+    	}
+
+    	const block = {
+    		c: function create() {
+    			svelte_virtual_list_viewport = element("svelte-virtual-list-viewport");
+    			svelte_virtual_list_contents = element("svelte-virtual-list-contents");
+
+    			for (let i = 0; i < each_blocks.length; i += 1) {
+    				each_blocks[i].c();
+    			}
+
+    			set_style(svelte_virtual_list_contents, "padding-top", /*top*/ ctx[6] + "px");
+    			set_style(svelte_virtual_list_contents, "padding-bottom", /*bottom*/ ctx[7] + "px");
+    			set_custom_element_data(svelte_virtual_list_contents, "class", "svelte-13thbeo");
+    			add_location(svelte_virtual_list_contents, file$9, 150, 2, 3486);
+    			set_custom_element_data(svelte_virtual_list_viewport, "id", /*vId*/ ctx[0]);
+    			set_style(svelte_virtual_list_viewport, "height", /*height*/ ctx[1]);
+    			set_custom_element_data(svelte_virtual_list_viewport, "class", "svelte-13thbeo");
+    			add_render_callback(() => /*svelte_virtual_list_viewport_elementresize_handler*/ ctx[19].call(svelte_virtual_list_viewport));
+    			add_location(svelte_virtual_list_viewport, file$9, 144, 0, 3324);
+    		},
+    		l: function claim(nodes) {
+    			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, svelte_virtual_list_viewport, anchor);
+    			append_dev(svelte_virtual_list_viewport, svelte_virtual_list_contents);
+
+    			for (let i = 0; i < each_blocks.length; i += 1) {
+    				each_blocks[i].m(svelte_virtual_list_contents, null);
+    			}
+
+    			/*svelte_virtual_list_contents_binding*/ ctx[17](svelte_virtual_list_contents);
+    			/*svelte_virtual_list_viewport_binding*/ ctx[18](svelte_virtual_list_viewport);
+    			svelte_virtual_list_viewport_resize_listener = add_resize_listener(svelte_virtual_list_viewport, /*svelte_virtual_list_viewport_elementresize_handler*/ ctx[19].bind(svelte_virtual_list_viewport));
+    			current = true;
+
+    			if (!mounted) {
+    				dispose = listen_dev(svelte_virtual_list_viewport, "scroll", /*handle_scroll*/ ctx[8], false, false, false);
+    				mounted = true;
+    			}
+    		},
+    		p: function update(ctx, [dirty]) {
+    			if (dirty & /*visible, $$scope*/ 32800) {
+    				each_value = /*visible*/ ctx[5];
+    				validate_each_argument(each_value);
+    				group_outros();
+    				validate_each_keys(ctx, each_value, get_each_context$1, get_key);
+    				each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx, each_value, each_1_lookup, svelte_virtual_list_contents, outro_and_destroy_block, create_each_block$1, null, get_each_context$1);
+    				check_outros();
+    			}
+
+    			if (!current || dirty & /*top*/ 64) {
+    				set_style(svelte_virtual_list_contents, "padding-top", /*top*/ ctx[6] + "px");
+    			}
+
+    			if (!current || dirty & /*bottom*/ 128) {
+    				set_style(svelte_virtual_list_contents, "padding-bottom", /*bottom*/ ctx[7] + "px");
+    			}
+
+    			if (!current || dirty & /*vId*/ 1) {
+    				set_custom_element_data(svelte_virtual_list_viewport, "id", /*vId*/ ctx[0]);
+    			}
+
+    			if (!current || dirty & /*height*/ 2) {
+    				set_style(svelte_virtual_list_viewport, "height", /*height*/ ctx[1]);
+    			}
+    		},
+    		i: function intro(local) {
+    			if (current) return;
+
+    			for (let i = 0; i < each_value.length; i += 1) {
+    				transition_in(each_blocks[i]);
+    			}
+
+    			current = true;
+    		},
+    		o: function outro(local) {
+    			for (let i = 0; i < each_blocks.length; i += 1) {
+    				transition_out(each_blocks[i]);
+    			}
+
+    			current = false;
+    		},
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(svelte_virtual_list_viewport);
+
+    			for (let i = 0; i < each_blocks.length; i += 1) {
+    				each_blocks[i].d();
+    			}
+
+    			/*svelte_virtual_list_contents_binding*/ ctx[17](null);
+    			/*svelte_virtual_list_viewport_binding*/ ctx[18](null);
+    			svelte_virtual_list_viewport_resize_listener();
+    			mounted = false;
+    			dispose();
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_fragment$9.name,
+    		type: "component",
+    		source: "",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    function instance$9($$self, $$props, $$invalidate) {
+    	let { $$slots: slots = {}, $$scope } = $$props;
+    	validate_slots("VirtualList", slots, ['default']);
+    	let { items } = $$props;
+    	let { vId } = $$props;
+    	let { height = "100%" } = $$props;
+    	let { itemHeight = undefined } = $$props;
+    	let { start = 0 } = $$props;
+    	let { end = 0 } = $$props;
+
+    	// local state
+    	let height_map = [];
+
+    	let rows;
+    	let viewport;
+    	let contents;
+    	let viewport_height = 0;
+    	let visible;
+    	let mounted;
+    	let top = 0;
+    	let bottom = 0;
+    	let average_height;
+
+    	async function refresh(items, viewport_height, itemHeight) {
+    		const isStartOverflow = items.length < start;
+
+    		if (isStartOverflow) {
+    			await scrollToIndex(items.length - 1, { behavior: "auto" });
+    		}
+
+    		const { scrollTop } = viewport;
+    		await tick(); // wait until the DOM is up to date
+    		let content_height = top - scrollTop;
+    		let i = start;
+
+    		while (content_height < viewport_height && i < items.length) {
+    			let row = rows[i - start];
+
+    			if (!row) {
+    				$$invalidate(10, end = i + 1);
+    				await tick(); // render the newly visible row
+    				row = rows[i - start];
+    			}
+
+    			const row_height = height_map[i] = itemHeight || row.offsetHeight;
+    			content_height += row_height;
+    			i += 1;
+    		}
+
+    		$$invalidate(10, end = i);
+    		const remaining = items.length - end;
+    		average_height = (top + content_height) / end;
+    		$$invalidate(7, bottom = remaining * average_height);
+    		height_map.length = items.length;
+    	}
+
+    	async function handle_scroll() {
+    		const { scrollTop } = viewport;
+
+    		for (let v = 0; v < rows.length; v += 1) {
+    			height_map[start + v] = itemHeight || rows[v].offsetHeight;
+    		}
+
+    		let i = 0;
+    		let y = 0;
+
+    		while (i < items.length) {
+    			const row_height = height_map[i] || average_height;
+
+    			if (y + row_height > scrollTop) {
+    				$$invalidate(9, start = i);
+    				$$invalidate(6, top = y);
+    				break;
+    			}
+
+    			y += row_height;
+    			i += 1;
+    		}
+
+    		while (i < items.length) {
+    			y += height_map[i] || average_height;
+    			i += 1;
+    			if (y > scrollTop + viewport_height) break;
+    		}
+
+    		$$invalidate(10, end = i);
+    		const remaining = items.length - end;
+    		average_height = y / end;
+    		while (i < items.length) height_map[i++] = average_height;
+    		$$invalidate(7, bottom = remaining * average_height);
+    	} // TODO if we overestimated the space these
+    	// rows would occupy we may need to add some
+
+    	async function scrollToIndex(index, opts) {
+    		const { scrollTop, scrollHeight } = viewport;
+    		const itemsDelta = index - start;
+    		const _itemHeight = itemHeight || average_height;
+    		const distance = itemsDelta * _itemHeight;
+
+    		opts = {
+    			left: 0,
+    			top: scrollTop + distance,
+    			behavior: "smooth",
+    			...opts
+    		};
+
+    		console.log(scrollTop);
+
+    		console.log({
+    			itemsDelta,
+    			_itemHeight,
+    			index,
+    			start,
+    			itemHeight,
+    			average_height,
+    			scrollTop
+    		});
+
+    		viewport.scrollTo(opts);
+    	}
+
+    	// trigger initial refresh
+    	onMount(() => {
+    		rows = contents.getElementsByTagName("svelte-virtual-list-row");
+    		$$invalidate(14, mounted = true);
+    	});
+
+    	const writable_props = ["items", "vId", "height", "itemHeight", "start", "end"];
+
+    	Object.keys($$props).forEach(key => {
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1$1.warn(`<VirtualList> was created with unknown prop '${key}'`);
+    	});
+
+    	function svelte_virtual_list_contents_binding($$value) {
+    		binding_callbacks[$$value ? "unshift" : "push"](() => {
+    			contents = $$value;
+    			$$invalidate(4, contents);
+    		});
+    	}
+
+    	function svelte_virtual_list_viewport_binding($$value) {
+    		binding_callbacks[$$value ? "unshift" : "push"](() => {
+    			viewport = $$value;
+    			$$invalidate(3, viewport);
+    		});
+    	}
+
+    	function svelte_virtual_list_viewport_elementresize_handler() {
+    		viewport_height = this.offsetHeight;
+    		$$invalidate(2, viewport_height);
+    	}
+
+    	$$self.$$set = $$props => {
+    		if ("items" in $$props) $$invalidate(11, items = $$props.items);
+    		if ("vId" in $$props) $$invalidate(0, vId = $$props.vId);
+    		if ("height" in $$props) $$invalidate(1, height = $$props.height);
+    		if ("itemHeight" in $$props) $$invalidate(12, itemHeight = $$props.itemHeight);
+    		if ("start" in $$props) $$invalidate(9, start = $$props.start);
+    		if ("end" in $$props) $$invalidate(10, end = $$props.end);
+    		if ("$$scope" in $$props) $$invalidate(15, $$scope = $$props.$$scope);
+    	};
+
+    	$$self.$capture_state = () => ({
+    		onMount,
+    		tick,
+    		items,
+    		vId,
+    		height,
+    		itemHeight,
+    		start,
+    		end,
+    		height_map,
+    		rows,
+    		viewport,
+    		contents,
+    		viewport_height,
+    		visible,
+    		mounted,
+    		top,
+    		bottom,
+    		average_height,
+    		refresh,
+    		handle_scroll,
+    		scrollToIndex
+    	});
+
+    	$$self.$inject_state = $$props => {
+    		if ("items" in $$props) $$invalidate(11, items = $$props.items);
+    		if ("vId" in $$props) $$invalidate(0, vId = $$props.vId);
+    		if ("height" in $$props) $$invalidate(1, height = $$props.height);
+    		if ("itemHeight" in $$props) $$invalidate(12, itemHeight = $$props.itemHeight);
+    		if ("start" in $$props) $$invalidate(9, start = $$props.start);
+    		if ("end" in $$props) $$invalidate(10, end = $$props.end);
+    		if ("height_map" in $$props) height_map = $$props.height_map;
+    		if ("rows" in $$props) rows = $$props.rows;
+    		if ("viewport" in $$props) $$invalidate(3, viewport = $$props.viewport);
+    		if ("contents" in $$props) $$invalidate(4, contents = $$props.contents);
+    		if ("viewport_height" in $$props) $$invalidate(2, viewport_height = $$props.viewport_height);
+    		if ("visible" in $$props) $$invalidate(5, visible = $$props.visible);
+    		if ("mounted" in $$props) $$invalidate(14, mounted = $$props.mounted);
+    		if ("top" in $$props) $$invalidate(6, top = $$props.top);
+    		if ("bottom" in $$props) $$invalidate(7, bottom = $$props.bottom);
+    		if ("average_height" in $$props) average_height = $$props.average_height;
+    	};
+
+    	if ($$props && "$$inject" in $$props) {
+    		$$self.$inject_state($$props.$$inject);
+    	}
+
+    	$$self.$$.update = () => {
+    		if ($$self.$$.dirty & /*items, start, end*/ 3584) {
+    			$$invalidate(5, visible = items.slice(start, end).map((data, i) => {
+    				return { index: i + start, data };
+    			}));
+    		}
+
+    		if ($$self.$$.dirty & /*mounted, items, viewport_height, itemHeight*/ 22532) {
+    			// whenever `items` changes, invalidate the current heightmap
+    			if (mounted) refresh(items, viewport_height, itemHeight);
+    		}
+    	};
+
+    	return [
+    		vId,
+    		height,
+    		viewport_height,
+    		viewport,
+    		contents,
+    		visible,
+    		top,
+    		bottom,
+    		handle_scroll,
+    		start,
+    		end,
+    		items,
+    		itemHeight,
+    		scrollToIndex,
+    		mounted,
+    		$$scope,
+    		slots,
+    		svelte_virtual_list_contents_binding,
+    		svelte_virtual_list_viewport_binding,
+    		svelte_virtual_list_viewport_elementresize_handler
+    	];
+    }
+
+    class VirtualList extends SvelteComponentDev {
+    	constructor(options) {
+    		super(options);
+
+    		init(this, options, instance$9, create_fragment$9, safe_not_equal, {
+    			items: 11,
+    			vId: 0,
+    			height: 1,
+    			itemHeight: 12,
+    			start: 9,
+    			end: 10,
+    			scrollToIndex: 13
+    		});
+
+    		dispatch_dev("SvelteRegisterComponent", {
+    			component: this,
+    			tagName: "VirtualList",
+    			options,
+    			id: create_fragment$9.name
+    		});
+
+    		const { ctx } = this.$$;
+    		const props = options.props || {};
+
+    		if (/*items*/ ctx[11] === undefined && !("items" in props)) {
+    			console_1$1.warn("<VirtualList> was created without expected prop 'items'");
+    		}
+
+    		if (/*vId*/ ctx[0] === undefined && !("vId" in props)) {
+    			console_1$1.warn("<VirtualList> was created without expected prop 'vId'");
+    		}
+    	}
+
+    	get items() {
+    		throw new Error("<VirtualList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	set items(value) {
+    		throw new Error("<VirtualList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	get vId() {
+    		throw new Error("<VirtualList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	set vId(value) {
+    		throw new Error("<VirtualList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	get height() {
+    		throw new Error("<VirtualList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	set height(value) {
+    		throw new Error("<VirtualList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	get itemHeight() {
+    		throw new Error("<VirtualList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	set itemHeight(value) {
+    		throw new Error("<VirtualList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	get start() {
+    		throw new Error("<VirtualList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	set start(value) {
+    		throw new Error("<VirtualList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	get end() {
+    		throw new Error("<VirtualList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	set end(value) {
+    		throw new Error("<VirtualList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	get scrollToIndex() {
+    		return this.$$.ctx[13];
+    	}
+
+    	set scrollToIndex(value) {
+    		throw new Error("<VirtualList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+    }
+
+    /* src\components\widgets\Message.svelte generated by Svelte v3.35.0 */
+
+    const file$8 = "src\\components\\widgets\\Message.svelte";
+
+    function create_fragment$8(ctx) {
+    	let div;
+    	let t_value = /*item*/ ctx[0].message + "";
+    	let t;
+
+    	const block = {
+    		c: function create() {
+    			div = element("div");
+    			t = text(t_value);
+    			attr_dev(div, "class", "list-item svelte-9qezr5");
+    			add_location(div, file$8, 4, 0, 43);
+    		},
+    		l: function claim(nodes) {
+    			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, div, anchor);
+    			append_dev(div, t);
+    		},
+    		p: function update(ctx, [dirty]) {
+    			if (dirty & /*item*/ 1 && t_value !== (t_value = /*item*/ ctx[0].message + "")) set_data_dev(t, t_value);
+    		},
+    		i: noop,
+    		o: noop,
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(div);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_fragment$8.name,
+    		type: "component",
+    		source: "",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    function instance$8($$self, $$props, $$invalidate) {
+    	let { $$slots: slots = {}, $$scope } = $$props;
+    	validate_slots("Message", slots, []);
+    	let { item } = $$props;
+    	const writable_props = ["item"];
+
+    	Object.keys($$props).forEach(key => {
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<Message> was created with unknown prop '${key}'`);
+    	});
+
+    	$$self.$$set = $$props => {
+    		if ("item" in $$props) $$invalidate(0, item = $$props.item);
+    	};
+
+    	$$self.$capture_state = () => ({ item });
+
+    	$$self.$inject_state = $$props => {
+    		if ("item" in $$props) $$invalidate(0, item = $$props.item);
+    	};
+
+    	if ($$props && "$$inject" in $$props) {
+    		$$self.$inject_state($$props.$$inject);
+    	}
+
+    	return [item];
+    }
+
+    class Message extends SvelteComponentDev {
+    	constructor(options) {
+    		super(options);
+    		init(this, options, instance$8, create_fragment$8, safe_not_equal, { item: 0 });
+
+    		dispatch_dev("SvelteRegisterComponent", {
+    			component: this,
+    			tagName: "Message",
+    			options,
+    			id: create_fragment$8.name
+    		});
+
+    		const { ctx } = this.$$;
+    		const props = options.props || {};
+
+    		if (/*item*/ ctx[0] === undefined && !("item" in props)) {
+    			console.warn("<Message> was created without expected prop 'item'");
+    		}
+    	}
+
+    	get item() {
+    		throw new Error("<Message>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	set item(value) {
+    		throw new Error("<Message>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+    }
+
+    /* src\components\widgets\MessageList.svelte generated by Svelte v3.35.0 */
+
+    const { console: console_1 } = globals;
+    const file$7 = "src\\components\\widgets\\MessageList.svelte";
+
+    // (29:2) <VirtualList      {items}      bind:start      bind:end      bind:scrollToIndex      let:item      vId="message-holder"    >
+    function create_default_slot$1(ctx) {
+    	let message;
+    	let current;
+
+    	message = new Message({
+    			props: { item: /*item*/ ctx[7] },
+    			$$inline: true
+    		});
+
+    	const block = {
+    		c: function create() {
+    			create_component(message.$$.fragment);
+    		},
+    		m: function mount(target, anchor) {
+    			mount_component(message, target, anchor);
+    			current = true;
+    		},
+    		p: function update(ctx, dirty) {
+    			const message_changes = {};
+    			if (dirty & /*item*/ 128) message_changes.item = /*item*/ ctx[7];
+    			message.$set(message_changes);
+    		},
+    		i: function intro(local) {
+    			if (current) return;
+    			transition_in(message.$$.fragment, local);
+    			current = true;
+    		},
+    		o: function outro(local) {
+    			transition_out(message.$$.fragment, local);
+    			current = false;
+    		},
+    		d: function destroy(detaching) {
+    			destroy_component(message, detaching);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_default_slot$1.name,
+    		type: "slot",
+    		source: "(29:2) <VirtualList      {items}      bind:start      bind:end      bind:scrollToIndex      let:item      vId=\\\"message-holder\\\"    >",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    function create_fragment$7(ctx) {
+    	let div;
+    	let t0;
+    	let t1;
+    	let br0;
+    	let t2;
+    	let t3;
+    	let t4;
+    	let br1;
+    	let t5;
+    	let t6;
+    	let t7;
+    	let virtuallist;
+    	let updating_start;
+    	let updating_end;
+    	let updating_scrollToIndex;
+    	let current;
+
+    	function virtuallist_start_binding(value) {
+    		/*virtuallist_start_binding*/ ctx[4](value);
+    	}
+
+    	function virtuallist_end_binding(value) {
+    		/*virtuallist_end_binding*/ ctx[5](value);
+    	}
+
+    	function virtuallist_scrollToIndex_binding(value) {
+    		/*virtuallist_scrollToIndex_binding*/ ctx[6](value);
+    	}
+
+    	let virtuallist_props = {
+    		items: /*items*/ ctx[3],
+    		vId: "message-holder",
+    		$$slots: {
+    			default: [
+    				create_default_slot$1,
+    				({ item }) => ({ 7: item }),
+    				({ item }) => item ? 128 : 0
+    			]
+    		},
+    		$$scope: { ctx }
+    	};
+
+    	if (/*start*/ ctx[0] !== void 0) {
+    		virtuallist_props.start = /*start*/ ctx[0];
+    	}
+
+    	if (/*end*/ ctx[1] !== void 0) {
+    		virtuallist_props.end = /*end*/ ctx[1];
+    	}
+
+    	if (/*scrollToIndex*/ ctx[2] !== void 0) {
+    		virtuallist_props.scrollToIndex = /*scrollToIndex*/ ctx[2];
+    	}
+
+    	virtuallist = new VirtualList({ props: virtuallist_props, $$inline: true });
+    	binding_callbacks.push(() => bind(virtuallist, "start", virtuallist_start_binding));
+    	binding_callbacks.push(() => bind(virtuallist, "end", virtuallist_end_binding));
+    	binding_callbacks.push(() => bind(virtuallist, "scrollToIndex", virtuallist_scrollToIndex_binding));
+
+    	const block = {
+    		c: function create() {
+    			div = element("div");
+    			t0 = text(/*scrollToIndex*/ ctx[2]);
+    			t1 = space();
+    			br0 = element("br");
+    			t2 = space();
+    			t3 = text(/*start*/ ctx[0]);
+    			t4 = space();
+    			br1 = element("br");
+    			t5 = space();
+    			t6 = text(/*end*/ ctx[1]);
+    			t7 = space();
+    			create_component(virtuallist.$$.fragment);
+    			add_location(br0, file$7, 25, 18, 658);
+    			add_location(br1, file$7, 26, 10, 676);
+    			attr_dev(div, "class", "list h-full svelte-1ecmmwi");
+    			add_location(div, file$7, 24, 0, 613);
+    		},
+    		l: function claim(nodes) {
+    			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, div, anchor);
+    			append_dev(div, t0);
+    			append_dev(div, t1);
+    			append_dev(div, br0);
+    			append_dev(div, t2);
+    			append_dev(div, t3);
+    			append_dev(div, t4);
+    			append_dev(div, br1);
+    			append_dev(div, t5);
+    			append_dev(div, t6);
+    			append_dev(div, t7);
+    			mount_component(virtuallist, div, null);
+    			current = true;
+    		},
+    		p: function update(ctx, [dirty]) {
+    			if (!current || dirty & /*scrollToIndex*/ 4) set_data_dev(t0, /*scrollToIndex*/ ctx[2]);
+    			if (!current || dirty & /*start*/ 1) set_data_dev(t3, /*start*/ ctx[0]);
+    			if (!current || dirty & /*end*/ 2) set_data_dev(t6, /*end*/ ctx[1]);
+    			const virtuallist_changes = {};
+    			if (dirty & /*items*/ 8) virtuallist_changes.items = /*items*/ ctx[3];
+
+    			if (dirty & /*$$scope, item*/ 384) {
+    				virtuallist_changes.$$scope = { dirty, ctx };
+    			}
+
+    			if (!updating_start && dirty & /*start*/ 1) {
+    				updating_start = true;
+    				virtuallist_changes.start = /*start*/ ctx[0];
+    				add_flush_callback(() => updating_start = false);
+    			}
+
+    			if (!updating_end && dirty & /*end*/ 2) {
+    				updating_end = true;
+    				virtuallist_changes.end = /*end*/ ctx[1];
+    				add_flush_callback(() => updating_end = false);
+    			}
+
+    			if (!updating_scrollToIndex && dirty & /*scrollToIndex*/ 4) {
+    				updating_scrollToIndex = true;
+    				virtuallist_changes.scrollToIndex = /*scrollToIndex*/ ctx[2];
+    				add_flush_callback(() => updating_scrollToIndex = false);
+    			}
+
+    			virtuallist.$set(virtuallist_changes);
+    		},
+    		i: function intro(local) {
+    			if (current) return;
+    			transition_in(virtuallist.$$.fragment, local);
+    			current = true;
+    		},
+    		o: function outro(local) {
+    			transition_out(virtuallist.$$.fragment, local);
+    			current = false;
+    		},
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(div);
+    			destroy_component(virtuallist);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_fragment$7.name,
+    		type: "component",
+    		source: "",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    function instance$7($$self, $$props, $$invalidate) {
+    	let { $$slots: slots = {}, $$scope } = $$props;
+    	validate_slots("MessageList", slots, []);
+
+    	setGlobalOptions({
+    		container: "#message-holder",
+    		duration: 100
+    	});
+
+    	let { items = [] } = $$props;
+    	let { start = 0 } = $$props;
+    	let { end = 0 } = $$props;
+    	let { scrollToIndex = undefined } = $$props;
+
+    	onMount(() => {
+    		console.log(items.length);
+    		scrollToIndex(end);
+    		scrollTo({ element: `post-${end}` });
+    		scrollToBottom();
+    	});
+
+    	const writable_props = ["items", "start", "end", "scrollToIndex"];
+
+    	Object.keys($$props).forEach(key => {
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1.warn(`<MessageList> was created with unknown prop '${key}'`);
+    	});
+
+    	function virtuallist_start_binding(value) {
+    		start = value;
+    		$$invalidate(0, start);
+    	}
+
+    	function virtuallist_end_binding(value) {
+    		end = value;
+    		$$invalidate(1, end);
+    	}
+
+    	function virtuallist_scrollToIndex_binding(value) {
+    		scrollToIndex = value;
+    		$$invalidate(2, scrollToIndex);
+    	}
+
+    	$$self.$$set = $$props => {
+    		if ("items" in $$props) $$invalidate(3, items = $$props.items);
+    		if ("start" in $$props) $$invalidate(0, start = $$props.start);
+    		if ("end" in $$props) $$invalidate(1, end = $$props.end);
+    		if ("scrollToIndex" in $$props) $$invalidate(2, scrollToIndex = $$props.scrollToIndex);
+    	};
+
+    	$$self.$capture_state = () => ({
+    		onMount,
+    		tick,
+    		animateScroll,
+    		VirtualList,
+    		Message,
+    		items,
+    		start,
+    		end,
+    		scrollToIndex
+    	});
+
+    	$$self.$inject_state = $$props => {
+    		if ("items" in $$props) $$invalidate(3, items = $$props.items);
+    		if ("start" in $$props) $$invalidate(0, start = $$props.start);
+    		if ("end" in $$props) $$invalidate(1, end = $$props.end);
+    		if ("scrollToIndex" in $$props) $$invalidate(2, scrollToIndex = $$props.scrollToIndex);
+    	};
+
+    	if ($$props && "$$inject" in $$props) {
+    		$$self.$inject_state($$props.$$inject);
+    	}
+
+    	return [
+    		start,
+    		end,
+    		scrollToIndex,
+    		items,
+    		virtuallist_start_binding,
+    		virtuallist_end_binding,
+    		virtuallist_scrollToIndex_binding
+    	];
+    }
+
+    class MessageList extends SvelteComponentDev {
+    	constructor(options) {
+    		super(options);
+
+    		init(this, options, instance$7, create_fragment$7, safe_not_equal, {
+    			items: 3,
+    			start: 0,
+    			end: 1,
+    			scrollToIndex: 2
+    		});
+
+    		dispatch_dev("SvelteRegisterComponent", {
+    			component: this,
+    			tagName: "MessageList",
+    			options,
+    			id: create_fragment$7.name
+    		});
+    	}
+
+    	get items() {
+    		throw new Error("<MessageList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	set items(value) {
+    		throw new Error("<MessageList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	get start() {
+    		throw new Error("<MessageList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	set start(value) {
+    		throw new Error("<MessageList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	get end() {
+    		throw new Error("<MessageList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	set end(value) {
+    		throw new Error("<MessageList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	get scrollToIndex() {
+    		throw new Error("<MessageList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	set scrollToIndex(value) {
+    		throw new Error("<MessageList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+    }
+
+    let id = 0;
+
+    function fill(len) {
+        const fn = () => {
+            const item = {
+                id,
+                date: "2018-06-02T22:45:00.000Z", // Date object
+                author: "Luke",
+                message: "Hey how are you?, " + id,
+            };
+            id++;
+            return item
+        };
+        return Array(len).fill().map(_ => fn())
+    }
+
+    const loadMore = () => {
+        return fill(10)
+    };
+
+    let loadItems = () => (fill(1000));
+
+    /* src\pages\chats\ChatSingle.svelte generated by Svelte v3.35.0 */
     const file$6 = "src\\pages\\chats\\ChatSingle.svelte";
 
     function create_fragment$6(ctx) {
     	let main;
+    	let div1;
+    	let div0;
     	let t0_value = /*params*/ ctx[0].chatId + "";
     	let t0;
     	let t1;
+    	let messagelist;
+    	let updating_scrollToIndex;
+    	let t2;
+    	let div2;
+    	let current;
+
+    	function messagelist_scrollToIndex_binding(value) {
+    		/*messagelist_scrollToIndex_binding*/ ctx[3](value);
+    	}
+
+    	let messagelist_props = { items: /*messages*/ ctx[2] };
+
+    	if (/*scrollToIndex*/ ctx[1] !== void 0) {
+    		messagelist_props.scrollToIndex = /*scrollToIndex*/ ctx[1];
+    	}
+
+    	messagelist = new MessageList({ props: messagelist_props, $$inline: true });
+    	binding_callbacks.push(() => bind(messagelist, "scrollToIndex", messagelist_scrollToIndex_binding));
 
     	const block = {
     		c: function create() {
     			main = element("main");
+    			div1 = element("div");
+    			div0 = element("div");
     			t0 = text(t0_value);
-    			t1 = text(" ass");
-    			add_location(main, file$6, 3, 0, 49);
+    			t1 = space();
+    			create_component(messagelist.$$.fragment);
+    			t2 = space();
+    			div2 = element("div");
+    			div2.textContent = "this is side bar";
+    			attr_dev(div0, "class", "chat-info svelte-24aa6p");
+    			add_location(div0, file$6, 15, 4, 421);
+    			attr_dev(div1, "class", "message-container h-full w-4/5");
+    			add_location(div1, file$6, 14, 2, 371);
+    			attr_dev(div2, "class", "sidebar h-full h-1/5");
+    			add_location(div2, file$6, 18, 2, 536);
+    			attr_dev(main, "class", "h-full flex svelte-24aa6p");
+    			add_location(main, file$6, 13, 0, 341);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, main, anchor);
-    			append_dev(main, t0);
-    			append_dev(main, t1);
+    			append_dev(main, div1);
+    			append_dev(div1, div0);
+    			append_dev(div0, t0);
+    			append_dev(div1, t1);
+    			mount_component(messagelist, div1, null);
+    			append_dev(main, t2);
+    			append_dev(main, div2);
+    			current = true;
     		},
     		p: function update(ctx, [dirty]) {
-    			if (dirty & /*params*/ 1 && t0_value !== (t0_value = /*params*/ ctx[0].chatId + "")) set_data_dev(t0, t0_value);
+    			if ((!current || dirty & /*params*/ 1) && t0_value !== (t0_value = /*params*/ ctx[0].chatId + "")) set_data_dev(t0, t0_value);
+    			const messagelist_changes = {};
+    			if (dirty & /*messages*/ 4) messagelist_changes.items = /*messages*/ ctx[2];
+
+    			if (!updating_scrollToIndex && dirty & /*scrollToIndex*/ 2) {
+    				updating_scrollToIndex = true;
+    				messagelist_changes.scrollToIndex = /*scrollToIndex*/ ctx[1];
+    				add_flush_callback(() => updating_scrollToIndex = false);
+    			}
+
+    			messagelist.$set(messagelist_changes);
     		},
-    		i: noop,
-    		o: noop,
+    		i: function intro(local) {
+    			if (current) return;
+    			transition_in(messagelist.$$.fragment, local);
+    			current = true;
+    		},
+    		o: function outro(local) {
+    			transition_out(messagelist.$$.fragment, local);
+    			current = false;
+    		},
     		d: function destroy(detaching) {
     			if (detaching) detach_dev(main);
+    			destroy_component(messagelist);
     		}
     	};
 
@@ -5453,30 +7002,53 @@ var app = (function () {
     }
 
     function instance$6($$self, $$props, $$invalidate) {
+    	let messages;
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots("ChatSingle", slots, []);
     	let { params = {} } = $$props;
+    	let filter = "";
+    	let allItems = loadItems();
+    	let scrollToIndex = undefined;
     	const writable_props = ["params"];
 
     	Object.keys($$props).forEach(key => {
     		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<ChatSingle> was created with unknown prop '${key}'`);
     	});
 
+    	function messagelist_scrollToIndex_binding(value) {
+    		scrollToIndex = value;
+    		$$invalidate(1, scrollToIndex);
+    	}
+
     	$$self.$$set = $$props => {
     		if ("params" in $$props) $$invalidate(0, params = $$props.params);
     	};
 
-    	$$self.$capture_state = () => ({ params });
+    	$$self.$capture_state = () => ({
+    		MessageList,
+    		loadItems,
+    		loadMore,
+    		params,
+    		filter,
+    		allItems,
+    		scrollToIndex,
+    		messages
+    	});
 
     	$$self.$inject_state = $$props => {
     		if ("params" in $$props) $$invalidate(0, params = $$props.params);
+    		if ("filter" in $$props) $$invalidate(4, filter = $$props.filter);
+    		if ("allItems" in $$props) $$invalidate(5, allItems = $$props.allItems);
+    		if ("scrollToIndex" in $$props) $$invalidate(1, scrollToIndex = $$props.scrollToIndex);
+    		if ("messages" in $$props) $$invalidate(2, messages = $$props.messages);
     	};
 
     	if ($$props && "$$inject" in $$props) {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [params];
+    	$$invalidate(2, messages = allItems.filter(i => i.message.includes(filter)));
+    	return [params, scrollToIndex, messages, messagelist_scrollToIndex_binding];
     }
 
     class ChatSingle extends SvelteComponentDev {
@@ -5525,7 +7097,7 @@ var app = (function () {
     			t = space();
     			section = element("section");
     			create_component(router.$$.fragment);
-    			attr_dev(section, "class", "chat-content svelte-xkx6r5");
+    			attr_dev(section, "class", "chat-content overflow-y-scroll svelte-xkx6r5");
     			add_location(section, file$5, 15, 2, 393);
     			attr_dev(main, "class", "chat-grid svelte-xkx6r5");
     			add_location(main, file$5, 13, 0, 346);
