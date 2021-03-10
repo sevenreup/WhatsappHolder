@@ -1,4 +1,5 @@
 let id = 0;
+let totalMessages = 100;
 
 function fill(len) {
     const fn = () => {
@@ -14,11 +15,16 @@ function fill(len) {
     return Array(len).fill().map(_ => fn())
 }
 
-const loadMore = () => {
-    return fill(10)
+const loadItems = (page, amount) => {
+    const offset = (page * amount);
+    if (offset < totalMessages) {
+        return fill(amount)
+    } else {
+        return []
+    }
 }
 
-let loadItems = () => (fill(1000));
+let loadMore = () => (fill(1000));
 
 export {
     loadItems,

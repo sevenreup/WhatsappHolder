@@ -180,72 +180,11 @@ var app = (function () {
             }
         }
     }
-    function set_custom_element_data(node, prop, value) {
-        if (prop in node) {
-            node[prop] = value;
-        }
-        else {
-            attr(node, prop, value);
-        }
-    }
     function children(element) {
         return Array.from(element.childNodes);
     }
     function set_style(node, key, value, important) {
         node.style.setProperty(key, value, important ? 'important' : '');
-    }
-    // unfortunately this can't be a constant as that wouldn't be tree-shakeable
-    // so we cache the result instead
-    let crossorigin;
-    function is_crossorigin() {
-        if (crossorigin === undefined) {
-            crossorigin = false;
-            try {
-                if (typeof window !== 'undefined' && window.parent) {
-                    void window.parent.document;
-                }
-            }
-            catch (error) {
-                crossorigin = true;
-            }
-        }
-        return crossorigin;
-    }
-    function add_resize_listener(node, fn) {
-        const computed_style = getComputedStyle(node);
-        if (computed_style.position === 'static') {
-            node.style.position = 'relative';
-        }
-        const iframe = element('iframe');
-        iframe.setAttribute('style', 'display: block; position: absolute; top: 0; left: 0; width: 100%; height: 100%; ' +
-            'overflow: hidden; border: 0; opacity: 0; pointer-events: none; z-index: -1;');
-        iframe.setAttribute('aria-hidden', 'true');
-        iframe.tabIndex = -1;
-        const crossorigin = is_crossorigin();
-        let unsubscribe;
-        if (crossorigin) {
-            iframe.src = "data:text/html,<script>onresize=function(){parent.postMessage(0,'*')}</script>";
-            unsubscribe = listen(window, 'message', (event) => {
-                if (event.source === iframe.contentWindow)
-                    fn();
-            });
-        }
-        else {
-            iframe.src = 'about:blank';
-            iframe.onload = () => {
-                unsubscribe = listen(iframe.contentWindow, 'resize', fn);
-            };
-        }
-        append(node, iframe);
-        return () => {
-            if (crossorigin) {
-                unsubscribe();
-            }
-            else if (unsubscribe && iframe.contentWindow) {
-                unsubscribe();
-            }
-            detach(iframe);
-        };
     }
     function toggle_class(element, name, toggle) {
         element.classList[toggle ? 'add' : 'remove'](name);
@@ -2662,7 +2601,7 @@ var app = (function () {
     			props: {
     				class: /*iClasses*/ ctx[7],
     				small: /*small*/ ctx[4],
-    				$$slots: { default: [create_default_slot$4] },
+    				$$slots: { default: [create_default_slot$3] },
     				$$scope: { ctx }
     			},
     			$$inline: true
@@ -2713,7 +2652,7 @@ var app = (function () {
     }
 
     // (148:8) <Icon class={iClasses} {small}>
-    function create_default_slot$4(ctx) {
+    function create_default_slot$3(ctx) {
     	let t;
 
     	const block_1 = {
@@ -2733,7 +2672,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block: block_1,
-    		id: create_default_slot$4.name,
+    		id: create_default_slot$3.name,
     		type: "slot",
     		source: "(148:8) <Icon class={iClasses} {small}>",
     		ctx
@@ -3417,7 +3356,7 @@ var app = (function () {
     			props: {
     				class: "pr-6",
     				small: /*dense*/ ctx[3],
-    				$$slots: { default: [create_default_slot$3] },
+    				$$slots: { default: [create_default_slot$2] },
     				$$scope: { ctx }
     			},
     			$$inline: true
@@ -3467,7 +3406,7 @@ var app = (function () {
     }
 
     // (60:4) <Icon       class="pr-6"       small={dense}     >
-    function create_default_slot$3(ctx) {
+    function create_default_slot$2(ctx) {
     	let t;
 
     	const block = {
@@ -3487,7 +3426,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_default_slot$3.name,
+    		id: create_default_slot$2.name,
     		type: "slot",
     		source: "(60:4) <Icon       class=\\\"pr-6\\\"       small={dense}     >",
     		ctx
@@ -4044,13 +3983,13 @@ var app = (function () {
     	value: /*value*/ ctx[0]
     });
 
-    const get_item_slot_changes = dirty => ({
+    const get_item_slot_changes$1 = dirty => ({
     	item: dirty & /*items*/ 2,
     	dense: dirty & /*dense*/ 4,
     	value: dirty & /*value*/ 1
     });
 
-    const get_item_slot_context = ctx => ({
+    const get_item_slot_context$1 = ctx => ({
     	item: /*item*/ ctx[6],
     	dense: /*dense*/ ctx[2],
     	value: /*value*/ ctx[0]
@@ -4114,7 +4053,7 @@ var app = (function () {
     function create_if_block(ctx) {
     	let current;
     	const item_slot_template = /*#slots*/ ctx[12].item;
-    	const item_slot = create_slot(item_slot_template, ctx, /*$$scope*/ ctx[18], get_item_slot_context);
+    	const item_slot = create_slot(item_slot_template, ctx, /*$$scope*/ ctx[18], get_item_slot_context$1);
     	const item_slot_or_fallback = item_slot || fallback_block$1(ctx);
 
     	const block = {
@@ -4131,7 +4070,7 @@ var app = (function () {
     		p: function update(ctx, dirty) {
     			if (item_slot) {
     				if (item_slot.p && dirty & /*$$scope, items, dense, value*/ 262151) {
-    					update_slot(item_slot, item_slot_template, ctx, /*$$scope*/ ctx[18], dirty, get_item_slot_changes, get_item_slot_context);
+    					update_slot(item_slot, item_slot_template, ctx, /*$$scope*/ ctx[18], dirty, get_item_slot_changes$1, get_item_slot_context$1);
     				}
     			} else {
     				if (item_slot_or_fallback && item_slot_or_fallback.p && dirty & /*items, dense, value*/ 7) {
@@ -4304,7 +4243,7 @@ var app = (function () {
     }
 
     // (50:10) <ListItem bind:value {...item} id={id(item)} {dense} on:change>
-    function create_default_slot$2(ctx) {
+    function create_default_slot$1(ctx) {
     	let t_value = /*item*/ ctx[6].text + "";
     	let t;
 
@@ -4325,7 +4264,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_default_slot$2.name,
+    		id: create_default_slot$1.name,
     		type: "slot",
     		source: "(50:10) <ListItem bind:value {...item} id={id(item)} {dense} on:change>",
     		ctx
@@ -4349,7 +4288,7 @@ var app = (function () {
     	}
 
     	let listitem_props = {
-    		$$slots: { default: [create_default_slot$2] },
+    		$$slots: { default: [create_default_slot$1] },
     		$$scope: { ctx }
     	};
 
@@ -4868,6 +4807,8 @@ var app = (function () {
     }
 
     /* src\components\widgets\list\InfiniteScroll.svelte generated by Svelte v3.35.0 */
+
+    const { console: console_1$2 } = globals;
     const file$d = "src\\components\\widgets\\list\\InfiniteScroll.svelte";
 
     function create_fragment$d(ctx) {
@@ -4877,7 +4818,7 @@ var app = (function () {
     		c: function create() {
     			div = element("div");
     			set_style(div, "width", "0px");
-    			add_location(div, file$d, 47, 0, 1251);
+    			add_location(div, file$d, 48, 0, 1282);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -4918,6 +4859,7 @@ var app = (function () {
     	let component;
 
     	const onScroll = e => {
+    		console.log("scrolling");
     		e.target;
 
     		const offset = horizontal
@@ -4946,7 +4888,7 @@ var app = (function () {
     	const writable_props = ["threshold", "horizontal", "elementScroll", "hasMore"];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<InfiniteScroll> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1$2.warn(`<InfiniteScroll> was created with unknown prop '${key}'`);
     	});
 
     	function div_binding($$value) {
@@ -5027,7 +4969,7 @@ var app = (function () {
     		const props = options.props || {};
 
     		if (/*elementScroll*/ ctx[3] === undefined && !("elementScroll" in props)) {
-    			console.warn("<InfiniteScroll> was created without expected prop 'elementScroll'");
+    			console_1$2.warn("<InfiniteScroll> was created without expected prop 'elementScroll'");
     		}
     	}
 
@@ -5156,11 +5098,11 @@ var app = (function () {
 
     /* src\components\ChatSidebar.svelte generated by Svelte v3.35.0 */
 
-    const { console: console_1$2 } = globals;
+    const { console: console_1$1 } = globals;
     const file$b = "src\\components\\ChatSidebar.svelte";
 
     // (45:6) 
-    function create_item_slot(ctx) {
+    function create_item_slot$1(ctx) {
     	let li;
     	let div2;
     	let img;
@@ -5269,7 +5211,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_item_slot.name,
+    		id: create_item_slot$1.name,
     		type: "slot",
     		source: "(45:6) ",
     		ctx
@@ -5300,7 +5242,7 @@ var app = (function () {
     		navigation: true,
     		$$slots: {
     			item: [
-    				create_item_slot,
+    				create_item_slot$1,
     				({ item }) => ({ 11: item }),
     				({ item }) => item ? 2048 : 0
     			]
@@ -5444,7 +5386,7 @@ var app = (function () {
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1$2.warn(`<ChatSidebar> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1$1.warn(`<ChatSidebar> was created with unknown prop '${key}'`);
     	});
 
     	const click_handler = item => {
@@ -5859,30 +5801,68 @@ var app = (function () {
         scrolltobottom: scrolltobottom
     });
 
-    /* src\components\widgets\list\VirtualList.svelte generated by Svelte v3.35.0 */
+    let id = 0;
+    let totalMessages = 100;
 
-    const { console: console_1$1 } = globals;
-    const file$9 = "src\\components\\widgets\\list\\VirtualList.svelte";
+    function fill(len) {
+        const fn = () => {
+            const item = {
+                id,
+                date: "2018-06-02T22:45:00.000Z", // Date object
+                author: "Luke",
+                message: "Hey how are you?, " + id,
+            };
+            id++;
+            return item
+        };
+        return Array(len).fill().map(_ => fn())
+    }
+
+    const loadItems = (page, amount) => {
+        const offset = (page * amount);
+        if (offset < totalMessages) {
+            return fill(amount)
+        } else {
+            return []
+        }
+    };
+
+    /* src\components\widgets\list\MesageInfiniteList.svelte generated by Svelte v3.35.0 */
+
+    const { console: console_1 } = globals;
+    const file$9 = "src\\components\\widgets\\list\\MesageInfiniteList.svelte";
 
     function get_each_context$1(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[24] = list[i];
+    	child_ctx[11] = list[i];
+    	child_ctx[13] = i;
     	return child_ctx;
     }
 
-    const get_default_slot_changes = dirty => ({ item: dirty & /*visible*/ 32 });
-    const get_default_slot_context = ctx => ({ item: /*row*/ ctx[24].data });
+    const get_item_slot_changes = dirty => ({
+    	item: dirty & /*items*/ 1,
+    	index: dirty & /*items*/ 1
+    });
 
-    // (157:30) Missing template
+    const get_item_slot_context = ctx => ({
+    	item: /*item*/ ctx[11],
+    	index: /*index*/ ctx[13]
+    });
+
+    // (38:42) {item}
     function fallback_block(ctx) {
+    	let t_value = /*item*/ ctx[11] + "";
     	let t;
 
     	const block = {
     		c: function create() {
-    			t = text("Missing template");
+    			t = text(t_value);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, t, anchor);
+    		},
+    		p: function update(ctx, dirty) {
+    			if (dirty & /*items*/ 1 && t_value !== (t_value = /*item*/ ctx[11] + "")) set_data_dev(t, t_value);
     		},
     		d: function destroy(detaching) {
     			if (detaching) detach_dev(t);
@@ -5893,70 +5873,64 @@ var app = (function () {
     		block,
     		id: fallback_block.name,
     		type: "fallback",
-    		source: "(157:30) Missing template",
+    		source: "(38:42) {item}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (155:4) {#each visible as row (row.index)}
+    // (37:2) {#each items as item, index (index)}
     function create_each_block$1(key_1, ctx) {
-    	let svelte_virtual_list_row;
-    	let t;
-    	let svelte_virtual_list_row_id_value;
+    	let div;
     	let current;
-    	const default_slot_template = /*#slots*/ ctx[16].default;
-    	const default_slot = create_slot(default_slot_template, ctx, /*$$scope*/ ctx[15], get_default_slot_context);
-    	const default_slot_or_fallback = default_slot || fallback_block(ctx);
+    	const item_slot_template = /*#slots*/ ctx[8].item;
+    	const item_slot = create_slot(item_slot_template, ctx, /*$$scope*/ ctx[7], get_item_slot_context);
+    	const item_slot_or_fallback = item_slot || fallback_block(ctx);
 
     	const block = {
     		key: key_1,
     		first: null,
     		c: function create() {
-    			svelte_virtual_list_row = element("svelte-virtual-list-row");
-    			if (default_slot_or_fallback) default_slot_or_fallback.c();
-    			t = space();
-    			set_custom_element_data(svelte_virtual_list_row, "id", svelte_virtual_list_row_id_value = "post-" + /*row*/ ctx[24].index);
-    			set_custom_element_data(svelte_virtual_list_row, "class", "svelte-13thbeo");
-    			add_location(svelte_virtual_list_row, file$9, 155, 6, 3652);
-    			this.first = svelte_virtual_list_row;
+    			div = element("div");
+    			if (item_slot_or_fallback) item_slot_or_fallback.c();
+    			add_location(div, file$9, 37, 4, 951);
+    			this.first = div;
     		},
     		m: function mount(target, anchor) {
-    			insert_dev(target, svelte_virtual_list_row, anchor);
+    			insert_dev(target, div, anchor);
 
-    			if (default_slot_or_fallback) {
-    				default_slot_or_fallback.m(svelte_virtual_list_row, null);
+    			if (item_slot_or_fallback) {
+    				item_slot_or_fallback.m(div, null);
     			}
 
-    			append_dev(svelte_virtual_list_row, t);
     			current = true;
     		},
     		p: function update(new_ctx, dirty) {
     			ctx = new_ctx;
 
-    			if (default_slot) {
-    				if (default_slot.p && dirty & /*$$scope, visible*/ 32800) {
-    					update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[15], dirty, get_default_slot_changes, get_default_slot_context);
+    			if (item_slot) {
+    				if (item_slot.p && dirty & /*$$scope, items*/ 129) {
+    					update_slot(item_slot, item_slot_template, ctx, /*$$scope*/ ctx[7], dirty, get_item_slot_changes, get_item_slot_context);
     				}
-    			}
-
-    			if (!current || dirty & /*visible*/ 32 && svelte_virtual_list_row_id_value !== (svelte_virtual_list_row_id_value = "post-" + /*row*/ ctx[24].index)) {
-    				set_custom_element_data(svelte_virtual_list_row, "id", svelte_virtual_list_row_id_value);
+    			} else {
+    				if (item_slot_or_fallback && item_slot_or_fallback.p && dirty & /*items*/ 1) {
+    					item_slot_or_fallback.p(ctx, dirty);
+    				}
     			}
     		},
     		i: function intro(local) {
     			if (current) return;
-    			transition_in(default_slot_or_fallback, local);
+    			transition_in(item_slot_or_fallback, local);
     			current = true;
     		},
     		o: function outro(local) {
-    			transition_out(default_slot_or_fallback, local);
+    			transition_out(item_slot_or_fallback, local);
     			current = false;
     		},
     		d: function destroy(detaching) {
-    			if (detaching) detach_dev(svelte_virtual_list_row);
-    			if (default_slot_or_fallback) default_slot_or_fallback.d(detaching);
+    			if (detaching) detach_dev(div);
+    			if (item_slot_or_fallback) item_slot_or_fallback.d(detaching);
     		}
     	};
 
@@ -5964,7 +5938,7 @@ var app = (function () {
     		block,
     		id: create_each_block$1.name,
     		type: "each",
-    		source: "(155:4) {#each visible as row (row.index)}",
+    		source: "(37:2) {#each items as item, index (index)}",
     		ctx
     	});
 
@@ -5972,17 +5946,13 @@ var app = (function () {
     }
 
     function create_fragment$9(ctx) {
-    	let svelte_virtual_list_viewport;
-    	let svelte_virtual_list_contents;
+    	let main;
     	let each_blocks = [];
     	let each_1_lookup = new Map();
-    	let svelte_virtual_list_viewport_resize_listener;
     	let current;
-    	let mounted;
-    	let dispose;
-    	let each_value = /*visible*/ ctx[5];
+    	let each_value = /*items*/ ctx[0];
     	validate_each_argument(each_value);
-    	const get_key = ctx => /*row*/ ctx[24].index;
+    	const get_key = ctx => /*index*/ ctx[13];
     	validate_each_keys(ctx, each_value, get_each_context$1, get_key);
 
     	for (let i = 0; i < each_value.length; i += 1) {
@@ -5993,68 +5963,35 @@ var app = (function () {
 
     	const block = {
     		c: function create() {
-    			svelte_virtual_list_viewport = element("svelte-virtual-list-viewport");
-    			svelte_virtual_list_contents = element("svelte-virtual-list-contents");
+    			main = element("main");
 
     			for (let i = 0; i < each_blocks.length; i += 1) {
     				each_blocks[i].c();
     			}
 
-    			set_style(svelte_virtual_list_contents, "padding-top", /*top*/ ctx[6] + "px");
-    			set_style(svelte_virtual_list_contents, "padding-bottom", /*bottom*/ ctx[7] + "px");
-    			set_custom_element_data(svelte_virtual_list_contents, "class", "svelte-13thbeo");
-    			add_location(svelte_virtual_list_contents, file$9, 150, 2, 3486);
-    			set_custom_element_data(svelte_virtual_list_viewport, "id", /*vId*/ ctx[0]);
-    			set_style(svelte_virtual_list_viewport, "height", /*height*/ ctx[1]);
-    			set_custom_element_data(svelte_virtual_list_viewport, "class", "svelte-13thbeo");
-    			add_render_callback(() => /*svelte_virtual_list_viewport_elementresize_handler*/ ctx[19].call(svelte_virtual_list_viewport));
-    			add_location(svelte_virtual_list_viewport, file$9, 144, 0, 3324);
+    			add_location(main, file$9, 35, 0, 877);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
-    			insert_dev(target, svelte_virtual_list_viewport, anchor);
-    			append_dev(svelte_virtual_list_viewport, svelte_virtual_list_contents);
+    			insert_dev(target, main, anchor);
 
     			for (let i = 0; i < each_blocks.length; i += 1) {
-    				each_blocks[i].m(svelte_virtual_list_contents, null);
+    				each_blocks[i].m(main, null);
     			}
 
-    			/*svelte_virtual_list_contents_binding*/ ctx[17](svelte_virtual_list_contents);
-    			/*svelte_virtual_list_viewport_binding*/ ctx[18](svelte_virtual_list_viewport);
-    			svelte_virtual_list_viewport_resize_listener = add_resize_listener(svelte_virtual_list_viewport, /*svelte_virtual_list_viewport_elementresize_handler*/ ctx[19].bind(svelte_virtual_list_viewport));
+    			/*main_binding*/ ctx[9](main);
     			current = true;
-
-    			if (!mounted) {
-    				dispose = listen_dev(svelte_virtual_list_viewport, "scroll", /*handle_scroll*/ ctx[8], false, false, false);
-    				mounted = true;
-    			}
     		},
     		p: function update(ctx, [dirty]) {
-    			if (dirty & /*visible, $$scope*/ 32800) {
-    				each_value = /*visible*/ ctx[5];
+    			if (dirty & /*items, $$scope*/ 129) {
+    				each_value = /*items*/ ctx[0];
     				validate_each_argument(each_value);
     				group_outros();
     				validate_each_keys(ctx, each_value, get_each_context$1, get_key);
-    				each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx, each_value, each_1_lookup, svelte_virtual_list_contents, outro_and_destroy_block, create_each_block$1, null, get_each_context$1);
+    				each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx, each_value, each_1_lookup, main, outro_and_destroy_block, create_each_block$1, null, get_each_context$1);
     				check_outros();
-    			}
-
-    			if (!current || dirty & /*top*/ 64) {
-    				set_style(svelte_virtual_list_contents, "padding-top", /*top*/ ctx[6] + "px");
-    			}
-
-    			if (!current || dirty & /*bottom*/ 128) {
-    				set_style(svelte_virtual_list_contents, "padding-bottom", /*bottom*/ ctx[7] + "px");
-    			}
-
-    			if (!current || dirty & /*vId*/ 1) {
-    				set_custom_element_data(svelte_virtual_list_viewport, "id", /*vId*/ ctx[0]);
-    			}
-
-    			if (!current || dirty & /*height*/ 2) {
-    				set_style(svelte_virtual_list_viewport, "height", /*height*/ ctx[1]);
     			}
     		},
     		i: function intro(local) {
@@ -6074,17 +6011,13 @@ var app = (function () {
     			current = false;
     		},
     		d: function destroy(detaching) {
-    			if (detaching) detach_dev(svelte_virtual_list_viewport);
+    			if (detaching) detach_dev(main);
 
     			for (let i = 0; i < each_blocks.length; i += 1) {
     				each_blocks[i].d();
     			}
 
-    			/*svelte_virtual_list_contents_binding*/ ctx[17](null);
-    			/*svelte_virtual_list_viewport_binding*/ ctx[18](null);
-    			svelte_virtual_list_viewport_resize_listener();
-    			mounted = false;
-    			dispose();
+    			/*main_binding*/ ctx[9](null);
     		}
     	};
 
@@ -6101,207 +6034,59 @@ var app = (function () {
 
     function instance$9($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
-    	validate_slots("VirtualList", slots, ['default']);
-    	let { items } = $$props;
-    	let { vId } = $$props;
-    	let { height = "100%" } = $$props;
-    	let { itemHeight = undefined } = $$props;
-    	let { start = 0 } = $$props;
-    	let { end = 0 } = $$props;
-
-    	// local state
-    	let height_map = [];
-
-    	let rows;
-    	let viewport;
-    	let contents;
-    	let viewport_height = 0;
-    	let visible;
-    	let mounted;
-    	let top = 0;
-    	let bottom = 0;
-    	let average_height;
-
-    	async function refresh(items, viewport_height, itemHeight) {
-    		const isStartOverflow = items.length < start;
-
-    		if (isStartOverflow) {
-    			await scrollToIndex(items.length - 1, { behavior: "auto" });
-    		}
-
-    		const { scrollTop } = viewport;
-    		await tick(); // wait until the DOM is up to date
-    		let content_height = top - scrollTop;
-    		let i = start;
-
-    		while (content_height < viewport_height && i < items.length) {
-    			let row = rows[i - start];
-
-    			if (!row) {
-    				$$invalidate(10, end = i + 1);
-    				await tick(); // render the newly visible row
-    				row = rows[i - start];
-    			}
-
-    			const row_height = height_map[i] = itemHeight || row.offsetHeight;
-    			content_height += row_height;
-    			i += 1;
-    		}
-
-    		$$invalidate(10, end = i);
-    		const remaining = items.length - end;
-    		average_height = (top + content_height) / end;
-    		$$invalidate(7, bottom = remaining * average_height);
-    		height_map.length = items.length;
-    	}
-
-    	async function handle_scroll() {
-    		const { scrollTop } = viewport;
-
-    		for (let v = 0; v < rows.length; v += 1) {
-    			height_map[start + v] = itemHeight || rows[v].offsetHeight;
-    		}
-
-    		let i = 0;
-    		let y = 0;
-
-    		while (i < items.length) {
-    			const row_height = height_map[i] || average_height;
-
-    			if (y + row_height > scrollTop) {
-    				$$invalidate(9, start = i);
-    				$$invalidate(6, top = y);
-    				break;
-    			}
-
-    			y += row_height;
-    			i += 1;
-    		}
-
-    		while (i < items.length) {
-    			y += height_map[i] || average_height;
-    			i += 1;
-    			if (y > scrollTop + viewport_height) break;
-    		}
-
-    		$$invalidate(10, end = i);
-    		const remaining = items.length - end;
-    		average_height = y / end;
-    		while (i < items.length) height_map[i++] = average_height;
-    		$$invalidate(7, bottom = remaining * average_height);
-    	} // TODO if we overestimated the space these
-    	// rows would occupy we may need to add some
-
-    	async function scrollToIndex(index, opts) {
-    		const { scrollTop, scrollHeight } = viewport;
-    		const itemsDelta = index - start;
-    		const _itemHeight = itemHeight || average_height;
-    		const distance = itemsDelta * _itemHeight;
-
-    		opts = {
-    			left: 0,
-    			top: scrollTop + distance,
-    			behavior: "smooth",
-    			...opts
-    		};
-
-    		console.log(scrollTop);
-
-    		console.log({
-    			itemsDelta,
-    			_itemHeight,
-    			index,
-    			start,
-    			itemHeight,
-    			average_height,
-    			scrollTop
-    		});
-
-    		viewport.scrollTo(opts);
-    	}
-
-    	// trigger initial refresh
-    	onMount(() => {
-    		rows = contents.getElementsByTagName("svelte-virtual-list-row");
-    		$$invalidate(14, mounted = true);
-    	});
-
-    	const writable_props = ["items", "vId", "height", "itemHeight", "start", "end"];
+    	validate_slots("MesageInfiniteList", slots, ['item']);
+    	let { items = [] } = $$props;
+    	let { element } = $$props;
+    	let { hasMore = true } = $$props;
+    	let { horizontal = false } = $$props;
+    	let { threshold = 0 } = $$props;
+    	let isLoadMore = false;
+    	const dispatch = createEventDispatcher();
+    	let component;
+    	const writable_props = ["items", "element", "hasMore", "horizontal", "threshold"];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1$1.warn(`<VirtualList> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1.warn(`<MesageInfiniteList> was created with unknown prop '${key}'`);
     	});
 
-    	function svelte_virtual_list_contents_binding($$value) {
+    	function main_binding($$value) {
     		binding_callbacks[$$value ? "unshift" : "push"](() => {
-    			contents = $$value;
-    			$$invalidate(4, contents);
+    			component = $$value;
+    			$$invalidate(1, component);
     		});
-    	}
-
-    	function svelte_virtual_list_viewport_binding($$value) {
-    		binding_callbacks[$$value ? "unshift" : "push"](() => {
-    			viewport = $$value;
-    			$$invalidate(3, viewport);
-    		});
-    	}
-
-    	function svelte_virtual_list_viewport_elementresize_handler() {
-    		viewport_height = this.offsetHeight;
-    		$$invalidate(2, viewport_height);
     	}
 
     	$$self.$$set = $$props => {
-    		if ("items" in $$props) $$invalidate(11, items = $$props.items);
-    		if ("vId" in $$props) $$invalidate(0, vId = $$props.vId);
-    		if ("height" in $$props) $$invalidate(1, height = $$props.height);
-    		if ("itemHeight" in $$props) $$invalidate(12, itemHeight = $$props.itemHeight);
-    		if ("start" in $$props) $$invalidate(9, start = $$props.start);
-    		if ("end" in $$props) $$invalidate(10, end = $$props.end);
-    		if ("$$scope" in $$props) $$invalidate(15, $$scope = $$props.$$scope);
+    		if ("items" in $$props) $$invalidate(0, items = $$props.items);
+    		if ("element" in $$props) $$invalidate(2, element = $$props.element);
+    		if ("hasMore" in $$props) $$invalidate(3, hasMore = $$props.hasMore);
+    		if ("horizontal" in $$props) $$invalidate(4, horizontal = $$props.horizontal);
+    		if ("threshold" in $$props) $$invalidate(5, threshold = $$props.threshold);
+    		if ("$$scope" in $$props) $$invalidate(7, $$scope = $$props.$$scope);
     	};
 
     	$$self.$capture_state = () => ({
-    		onMount,
-    		tick,
     		items,
-    		vId,
-    		height,
-    		itemHeight,
-    		start,
-    		end,
-    		height_map,
-    		rows,
-    		viewport,
-    		contents,
-    		viewport_height,
-    		visible,
-    		mounted,
-    		top,
-    		bottom,
-    		average_height,
-    		refresh,
-    		handle_scroll,
-    		scrollToIndex
+    		onMount,
+    		onDestroy,
+    		createEventDispatcher,
+    		element,
+    		hasMore,
+    		horizontal,
+    		threshold,
+    		isLoadMore,
+    		dispatch,
+    		component
     	});
 
     	$$self.$inject_state = $$props => {
-    		if ("items" in $$props) $$invalidate(11, items = $$props.items);
-    		if ("vId" in $$props) $$invalidate(0, vId = $$props.vId);
-    		if ("height" in $$props) $$invalidate(1, height = $$props.height);
-    		if ("itemHeight" in $$props) $$invalidate(12, itemHeight = $$props.itemHeight);
-    		if ("start" in $$props) $$invalidate(9, start = $$props.start);
-    		if ("end" in $$props) $$invalidate(10, end = $$props.end);
-    		if ("height_map" in $$props) height_map = $$props.height_map;
-    		if ("rows" in $$props) rows = $$props.rows;
-    		if ("viewport" in $$props) $$invalidate(3, viewport = $$props.viewport);
-    		if ("contents" in $$props) $$invalidate(4, contents = $$props.contents);
-    		if ("viewport_height" in $$props) $$invalidate(2, viewport_height = $$props.viewport_height);
-    		if ("visible" in $$props) $$invalidate(5, visible = $$props.visible);
-    		if ("mounted" in $$props) $$invalidate(14, mounted = $$props.mounted);
-    		if ("top" in $$props) $$invalidate(6, top = $$props.top);
-    		if ("bottom" in $$props) $$invalidate(7, bottom = $$props.bottom);
-    		if ("average_height" in $$props) average_height = $$props.average_height;
+    		if ("items" in $$props) $$invalidate(0, items = $$props.items);
+    		if ("element" in $$props) $$invalidate(2, element = $$props.element);
+    		if ("hasMore" in $$props) $$invalidate(3, hasMore = $$props.hasMore);
+    		if ("horizontal" in $$props) $$invalidate(4, horizontal = $$props.horizontal);
+    		if ("threshold" in $$props) $$invalidate(5, threshold = $$props.threshold);
+    		if ("isLoadMore" in $$props) $$invalidate(6, isLoadMore = $$props.isLoadMore);
+    		if ("component" in $$props) $$invalidate(1, component = $$props.component);
     	};
 
     	if ($$props && "$$inject" in $$props) {
@@ -6309,59 +6094,60 @@ var app = (function () {
     	}
 
     	$$self.$$.update = () => {
-    		if ($$self.$$.dirty & /*items, start, end*/ 3584) {
-    			$$invalidate(5, visible = items.slice(start, end).map((data, i) => {
-    				return { index: i + start, data };
-    			}));
-    		}
+    		if ($$self.$$.dirty & /*element, horizontal, threshold, isLoadMore, hasMore*/ 124) {
+    			{
+    				if (element) {
+    					console.log(element);
 
-    		if ($$self.$$.dirty & /*mounted, items, viewport_height, itemHeight*/ 22532) {
-    			// whenever `items` changes, invalidate the current heightmap
-    			if (mounted) refresh(items, viewport_height, itemHeight);
+    					element.addEventListener("scroll", e => {
+    						const offset = horizontal
+    						? e.target.scrollWidth - e.target.clientWidth - e.target.scrollLeft
+    						: e.target.scrollHeight - e.target.clientHeight - e.target.scrollTop;
+
+    						if (offset <= threshold) {
+    							if (!isLoadMore && hasMore) {
+    								dispatch("loadMore");
+    							}
+
+    							$$invalidate(6, isLoadMore = true);
+    						} else {
+    							$$invalidate(6, isLoadMore = false);
+    						}
+    					});
+    				}
+    			}
     		}
     	};
 
     	return [
-    		vId,
-    		height,
-    		viewport_height,
-    		viewport,
-    		contents,
-    		visible,
-    		top,
-    		bottom,
-    		handle_scroll,
-    		start,
-    		end,
     		items,
-    		itemHeight,
-    		scrollToIndex,
-    		mounted,
+    		component,
+    		element,
+    		hasMore,
+    		horizontal,
+    		threshold,
+    		isLoadMore,
     		$$scope,
     		slots,
-    		svelte_virtual_list_contents_binding,
-    		svelte_virtual_list_viewport_binding,
-    		svelte_virtual_list_viewport_elementresize_handler
+    		main_binding
     	];
     }
 
-    class VirtualList extends SvelteComponentDev {
+    class MesageInfiniteList extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
 
     		init(this, options, instance$9, create_fragment$9, safe_not_equal, {
-    			items: 11,
-    			vId: 0,
-    			height: 1,
-    			itemHeight: 12,
-    			start: 9,
-    			end: 10,
-    			scrollToIndex: 13
+    			items: 0,
+    			element: 2,
+    			hasMore: 3,
+    			horizontal: 4,
+    			threshold: 5
     		});
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
-    			tagName: "VirtualList",
+    			tagName: "MesageInfiniteList",
     			options,
     			id: create_fragment$9.name
     		});
@@ -6369,69 +6155,49 @@ var app = (function () {
     		const { ctx } = this.$$;
     		const props = options.props || {};
 
-    		if (/*items*/ ctx[11] === undefined && !("items" in props)) {
-    			console_1$1.warn("<VirtualList> was created without expected prop 'items'");
-    		}
-
-    		if (/*vId*/ ctx[0] === undefined && !("vId" in props)) {
-    			console_1$1.warn("<VirtualList> was created without expected prop 'vId'");
+    		if (/*element*/ ctx[2] === undefined && !("element" in props)) {
+    			console_1.warn("<MesageInfiniteList> was created without expected prop 'element'");
     		}
     	}
 
     	get items() {
-    		throw new Error("<VirtualList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    		throw new Error("<MesageInfiniteList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
 
     	set items(value) {
-    		throw new Error("<VirtualList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    		throw new Error("<MesageInfiniteList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
 
-    	get vId() {
-    		throw new Error("<VirtualList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	get element() {
+    		throw new Error("<MesageInfiniteList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
 
-    	set vId(value) {
-    		throw new Error("<VirtualList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	set element(value) {
+    		throw new Error("<MesageInfiniteList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
 
-    	get height() {
-    		throw new Error("<VirtualList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	get hasMore() {
+    		throw new Error("<MesageInfiniteList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
 
-    	set height(value) {
-    		throw new Error("<VirtualList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	set hasMore(value) {
+    		throw new Error("<MesageInfiniteList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
 
-    	get itemHeight() {
-    		throw new Error("<VirtualList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	get horizontal() {
+    		throw new Error("<MesageInfiniteList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
 
-    	set itemHeight(value) {
-    		throw new Error("<VirtualList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	set horizontal(value) {
+    		throw new Error("<MesageInfiniteList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
 
-    	get start() {
-    		throw new Error("<VirtualList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	get threshold() {
+    		throw new Error("<MesageInfiniteList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
 
-    	set start(value) {
-    		throw new Error("<VirtualList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
-    	}
-
-    	get end() {
-    		throw new Error("<VirtualList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
-    	}
-
-    	set end(value) {
-    		throw new Error("<VirtualList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
-    	}
-
-    	get scrollToIndex() {
-    		return this.$$.ctx[13];
-    	}
-
-    	set scrollToIndex(value) {
-    		throw new Error("<VirtualList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	set threshold(value) {
+    		throw new Error("<MesageInfiniteList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
     }
 
@@ -6536,31 +6302,34 @@ var app = (function () {
     }
 
     /* src\components\widgets\MessageList.svelte generated by Svelte v3.35.0 */
-
-    const { console: console_1 } = globals;
     const file$7 = "src\\components\\widgets\\MessageList.svelte";
 
-    // (29:2) <VirtualList      {items}      bind:start      bind:end      bind:scrollToIndex      let:item      vId="message-holder"    >
-    function create_default_slot$1(ctx) {
+    // (40:4) 
+    function create_item_slot(ctx) {
+    	let li;
     	let message;
     	let current;
 
     	message = new Message({
-    			props: { item: /*item*/ ctx[7] },
+    			props: { item: /*item*/ ctx[8] },
     			$$inline: true
     		});
 
     	const block = {
     		c: function create() {
+    			li = element("li");
     			create_component(message.$$.fragment);
+    			attr_dev(li, "slot", "item");
+    			add_location(li, file$7, 39, 4, 868);
     		},
     		m: function mount(target, anchor) {
-    			mount_component(message, target, anchor);
+    			insert_dev(target, li, anchor);
+    			mount_component(message, li, null);
     			current = true;
     		},
     		p: function update(ctx, dirty) {
     			const message_changes = {};
-    			if (dirty & /*item*/ 128) message_changes.item = /*item*/ ctx[7];
+    			if (dirty & /*item*/ 256) message_changes.item = /*item*/ ctx[8];
     			message.$set(message_changes);
     		},
     		i: function intro(local) {
@@ -6573,15 +6342,16 @@ var app = (function () {
     			current = false;
     		},
     		d: function destroy(detaching) {
-    			destroy_component(message, detaching);
+    			if (detaching) detach_dev(li);
+    			destroy_component(message);
     		}
     	};
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_default_slot$1.name,
+    		id: create_item_slot.name,
     		type: "slot",
-    		source: "(29:2) <VirtualList      {items}      bind:start      bind:end      bind:scrollToIndex      let:item      vId=\\\"message-holder\\\"    >",
+    		source: "(40:4) ",
     		ctx
     	});
 
@@ -6590,144 +6360,69 @@ var app = (function () {
 
     function create_fragment$7(ctx) {
     	let div;
-    	let t0;
-    	let t1;
-    	let br0;
-    	let t2;
-    	let t3;
-    	let t4;
-    	let br1;
-    	let t5;
-    	let t6;
-    	let t7;
-    	let virtuallist;
-    	let updating_start;
-    	let updating_end;
-    	let updating_scrollToIndex;
+    	let mesageinfinitelist;
     	let current;
 
-    	function virtuallist_start_binding(value) {
-    		/*virtuallist_start_binding*/ ctx[4](value);
-    	}
+    	mesageinfinitelist = new MesageInfiniteList({
+    			props: {
+    				items: /*items*/ ctx[1],
+    				element: /*messageList*/ ctx[3],
+    				hasMore: /*newData*/ ctx[2].length,
+    				$$slots: {
+    					item: [
+    						create_item_slot,
+    						({ item, index }) => ({ 8: item, 9: index }),
+    						({ item, index }) => (item ? 256 : 0) | (index ? 512 : 0)
+    					]
+    				},
+    				$$scope: { ctx }
+    			},
+    			$$inline: true
+    		});
 
-    	function virtuallist_end_binding(value) {
-    		/*virtuallist_end_binding*/ ctx[5](value);
-    	}
-
-    	function virtuallist_scrollToIndex_binding(value) {
-    		/*virtuallist_scrollToIndex_binding*/ ctx[6](value);
-    	}
-
-    	let virtuallist_props = {
-    		items: /*items*/ ctx[3],
-    		vId: "message-holder",
-    		$$slots: {
-    			default: [
-    				create_default_slot$1,
-    				({ item }) => ({ 7: item }),
-    				({ item }) => item ? 128 : 0
-    			]
-    		},
-    		$$scope: { ctx }
-    	};
-
-    	if (/*start*/ ctx[0] !== void 0) {
-    		virtuallist_props.start = /*start*/ ctx[0];
-    	}
-
-    	if (/*end*/ ctx[1] !== void 0) {
-    		virtuallist_props.end = /*end*/ ctx[1];
-    	}
-
-    	if (/*scrollToIndex*/ ctx[2] !== void 0) {
-    		virtuallist_props.scrollToIndex = /*scrollToIndex*/ ctx[2];
-    	}
-
-    	virtuallist = new VirtualList({ props: virtuallist_props, $$inline: true });
-    	binding_callbacks.push(() => bind(virtuallist, "start", virtuallist_start_binding));
-    	binding_callbacks.push(() => bind(virtuallist, "end", virtuallist_end_binding));
-    	binding_callbacks.push(() => bind(virtuallist, "scrollToIndex", virtuallist_scrollToIndex_binding));
+    	mesageinfinitelist.$on("loadMore", /*loadMore_handler*/ ctx[5]);
 
     	const block = {
     		c: function create() {
     			div = element("div");
-    			t0 = text(/*scrollToIndex*/ ctx[2]);
-    			t1 = space();
-    			br0 = element("br");
-    			t2 = space();
-    			t3 = text(/*start*/ ctx[0]);
-    			t4 = space();
-    			br1 = element("br");
-    			t5 = space();
-    			t6 = text(/*end*/ ctx[1]);
-    			t7 = space();
-    			create_component(virtuallist.$$.fragment);
-    			add_location(br0, file$7, 25, 18, 658);
-    			add_location(br1, file$7, 26, 10, 676);
+    			create_component(mesageinfinitelist.$$.fragment);
     			attr_dev(div, "class", "list h-full svelte-1ecmmwi");
-    			add_location(div, file$7, 24, 0, 613);
+    			add_location(div, file$7, 29, 0, 646);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
-    			append_dev(div, t0);
-    			append_dev(div, t1);
-    			append_dev(div, br0);
-    			append_dev(div, t2);
-    			append_dev(div, t3);
-    			append_dev(div, t4);
-    			append_dev(div, br1);
-    			append_dev(div, t5);
-    			append_dev(div, t6);
-    			append_dev(div, t7);
-    			mount_component(virtuallist, div, null);
+    			mount_component(mesageinfinitelist, div, null);
+    			/*div_binding*/ ctx[6](div);
     			current = true;
     		},
     		p: function update(ctx, [dirty]) {
-    			if (!current || dirty & /*scrollToIndex*/ 4) set_data_dev(t0, /*scrollToIndex*/ ctx[2]);
-    			if (!current || dirty & /*start*/ 1) set_data_dev(t3, /*start*/ ctx[0]);
-    			if (!current || dirty & /*end*/ 2) set_data_dev(t6, /*end*/ ctx[1]);
-    			const virtuallist_changes = {};
-    			if (dirty & /*items*/ 8) virtuallist_changes.items = /*items*/ ctx[3];
+    			const mesageinfinitelist_changes = {};
+    			if (dirty & /*items*/ 2) mesageinfinitelist_changes.items = /*items*/ ctx[1];
+    			if (dirty & /*messageList*/ 8) mesageinfinitelist_changes.element = /*messageList*/ ctx[3];
+    			if (dirty & /*newData*/ 4) mesageinfinitelist_changes.hasMore = /*newData*/ ctx[2].length;
 
-    			if (dirty & /*$$scope, item*/ 384) {
-    				virtuallist_changes.$$scope = { dirty, ctx };
+    			if (dirty & /*$$scope, item*/ 1280) {
+    				mesageinfinitelist_changes.$$scope = { dirty, ctx };
     			}
 
-    			if (!updating_start && dirty & /*start*/ 1) {
-    				updating_start = true;
-    				virtuallist_changes.start = /*start*/ ctx[0];
-    				add_flush_callback(() => updating_start = false);
-    			}
-
-    			if (!updating_end && dirty & /*end*/ 2) {
-    				updating_end = true;
-    				virtuallist_changes.end = /*end*/ ctx[1];
-    				add_flush_callback(() => updating_end = false);
-    			}
-
-    			if (!updating_scrollToIndex && dirty & /*scrollToIndex*/ 4) {
-    				updating_scrollToIndex = true;
-    				virtuallist_changes.scrollToIndex = /*scrollToIndex*/ ctx[2];
-    				add_flush_callback(() => updating_scrollToIndex = false);
-    			}
-
-    			virtuallist.$set(virtuallist_changes);
+    			mesageinfinitelist.$set(mesageinfinitelist_changes);
     		},
     		i: function intro(local) {
     			if (current) return;
-    			transition_in(virtuallist.$$.fragment, local);
+    			transition_in(mesageinfinitelist.$$.fragment, local);
     			current = true;
     		},
     		o: function outro(local) {
-    			transition_out(virtuallist.$$.fragment, local);
+    			transition_out(mesageinfinitelist.$$.fragment, local);
     			current = false;
     		},
     		d: function destroy(detaching) {
     			if (detaching) detach_dev(div);
-    			destroy_component(virtuallist);
+    			destroy_component(mesageinfinitelist);
+    			/*div_binding*/ ctx[6](null);
     		}
     	};
 
@@ -6751,90 +6446,82 @@ var app = (function () {
     		duration: 100
     	});
 
-    	let { items = [] } = $$props;
-    	let { start = 0 } = $$props;
-    	let { end = 0 } = $$props;
-    	let { scrollToIndex = undefined } = $$props;
+    	async function fetchData() {
+    		$$invalidate(2, newData = loadItems(page, size));
+    	}
+
+    	let items = [];
+    	let newData = [];
+    	let { page = 0 } = $$props;
+    	let size = 50;
+    	let messageList;
 
     	onMount(() => {
-    		console.log(items.length);
-    		scrollToIndex(end);
-    		scrollTo({ element: `post-${end}` });
-    		scrollToBottom();
+    		fetchData();
     	});
 
-    	const writable_props = ["items", "start", "end", "scrollToIndex"];
+    	const writable_props = ["page"];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1.warn(`<MessageList> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<MessageList> was created with unknown prop '${key}'`);
     	});
 
-    	function virtuallist_start_binding(value) {
-    		start = value;
-    		$$invalidate(0, start);
-    	}
+    	const loadMore_handler = () => {
+    		$$invalidate(0, page++, page);
+    		fetchData();
+    	};
 
-    	function virtuallist_end_binding(value) {
-    		end = value;
-    		$$invalidate(1, end);
-    	}
-
-    	function virtuallist_scrollToIndex_binding(value) {
-    		scrollToIndex = value;
-    		$$invalidate(2, scrollToIndex);
+    	function div_binding($$value) {
+    		binding_callbacks[$$value ? "unshift" : "push"](() => {
+    			messageList = $$value;
+    			$$invalidate(3, messageList);
+    		});
     	}
 
     	$$self.$$set = $$props => {
-    		if ("items" in $$props) $$invalidate(3, items = $$props.items);
-    		if ("start" in $$props) $$invalidate(0, start = $$props.start);
-    		if ("end" in $$props) $$invalidate(1, end = $$props.end);
-    		if ("scrollToIndex" in $$props) $$invalidate(2, scrollToIndex = $$props.scrollToIndex);
+    		if ("page" in $$props) $$invalidate(0, page = $$props.page);
     	};
 
     	$$self.$capture_state = () => ({
     		onMount,
     		tick,
     		animateScroll,
-    		VirtualList,
+    		loadItems,
+    		MesageInfiniteList,
     		Message,
+    		fetchData,
     		items,
-    		start,
-    		end,
-    		scrollToIndex
+    		newData,
+    		page,
+    		size,
+    		messageList
     	});
 
     	$$self.$inject_state = $$props => {
-    		if ("items" in $$props) $$invalidate(3, items = $$props.items);
-    		if ("start" in $$props) $$invalidate(0, start = $$props.start);
-    		if ("end" in $$props) $$invalidate(1, end = $$props.end);
-    		if ("scrollToIndex" in $$props) $$invalidate(2, scrollToIndex = $$props.scrollToIndex);
+    		if ("items" in $$props) $$invalidate(1, items = $$props.items);
+    		if ("newData" in $$props) $$invalidate(2, newData = $$props.newData);
+    		if ("page" in $$props) $$invalidate(0, page = $$props.page);
+    		if ("size" in $$props) size = $$props.size;
+    		if ("messageList" in $$props) $$invalidate(3, messageList = $$props.messageList);
     	};
 
     	if ($$props && "$$inject" in $$props) {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [
-    		start,
-    		end,
-    		scrollToIndex,
-    		items,
-    		virtuallist_start_binding,
-    		virtuallist_end_binding,
-    		virtuallist_scrollToIndex_binding
-    	];
+    	$$self.$$.update = () => {
+    		if ($$self.$$.dirty & /*items, newData*/ 6) {
+    			$$invalidate(1, items = [...items, ...newData]);
+    		}
+    	};
+
+    	return [page, items, newData, messageList, fetchData, loadMore_handler, div_binding];
     }
 
     class MessageList extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-
-    		init(this, options, instance$7, create_fragment$7, safe_not_equal, {
-    			items: 3,
-    			start: 0,
-    			end: 1,
-    			scrollToIndex: 2
-    		});
+    		init(this, options, instance$7, create_fragment$7, safe_not_equal, { page: 0 });
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
@@ -6844,60 +6531,14 @@ var app = (function () {
     		});
     	}
 
-    	get items() {
+    	get page() {
     		throw new Error("<MessageList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
 
-    	set items(value) {
-    		throw new Error("<MessageList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
-    	}
-
-    	get start() {
-    		throw new Error("<MessageList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
-    	}
-
-    	set start(value) {
-    		throw new Error("<MessageList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
-    	}
-
-    	get end() {
-    		throw new Error("<MessageList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
-    	}
-
-    	set end(value) {
-    		throw new Error("<MessageList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
-    	}
-
-    	get scrollToIndex() {
-    		throw new Error("<MessageList>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
-    	}
-
-    	set scrollToIndex(value) {
+    	set page(value) {
     		throw new Error("<MessageList>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
     }
-
-    let id = 0;
-
-    function fill(len) {
-        const fn = () => {
-            const item = {
-                id,
-                date: "2018-06-02T22:45:00.000Z", // Date object
-                author: "Luke",
-                message: "Hey how are you?, " + id,
-            };
-            id++;
-            return item
-        };
-        return Array(len).fill().map(_ => fn())
-    }
-
-    const loadMore = () => {
-        return fill(10)
-    };
-
-    let loadItems = () => (fill(1000));
 
     /* src\pages\chats\ChatSingle.svelte generated by Svelte v3.35.0 */
     const file$6 = "src\\pages\\chats\\ChatSingle.svelte";
@@ -6906,47 +6547,46 @@ var app = (function () {
     	let main;
     	let div1;
     	let div0;
-    	let t0_value = /*params*/ ctx[0].chatId + "";
     	let t0;
     	let t1;
     	let messagelist;
-    	let updating_scrollToIndex;
+    	let updating_page;
     	let t2;
     	let div2;
     	let current;
 
-    	function messagelist_scrollToIndex_binding(value) {
-    		/*messagelist_scrollToIndex_binding*/ ctx[3](value);
+    	function messagelist_page_binding(value) {
+    		/*messagelist_page_binding*/ ctx[2](value);
     	}
 
-    	let messagelist_props = { items: /*messages*/ ctx[2] };
+    	let messagelist_props = {};
 
-    	if (/*scrollToIndex*/ ctx[1] !== void 0) {
-    		messagelist_props.scrollToIndex = /*scrollToIndex*/ ctx[1];
+    	if (/*page*/ ctx[0] !== void 0) {
+    		messagelist_props.page = /*page*/ ctx[0];
     	}
 
     	messagelist = new MessageList({ props: messagelist_props, $$inline: true });
-    	binding_callbacks.push(() => bind(messagelist, "scrollToIndex", messagelist_scrollToIndex_binding));
+    	binding_callbacks.push(() => bind(messagelist, "page", messagelist_page_binding));
 
     	const block = {
     		c: function create() {
     			main = element("main");
     			div1 = element("div");
     			div0 = element("div");
-    			t0 = text(t0_value);
+    			t0 = text(/*page*/ ctx[0]);
     			t1 = space();
     			create_component(messagelist.$$.fragment);
     			t2 = space();
     			div2 = element("div");
     			div2.textContent = "this is side bar";
     			attr_dev(div0, "class", "chat-info svelte-24aa6p");
-    			add_location(div0, file$6, 15, 4, 421);
+    			add_location(div0, file$6, 9, 4, 223);
     			attr_dev(div1, "class", "message-container h-full w-4/5");
-    			add_location(div1, file$6, 14, 2, 371);
+    			add_location(div1, file$6, 8, 2, 173);
     			attr_dev(div2, "class", "sidebar h-full h-1/5");
-    			add_location(div2, file$6, 18, 2, 536);
+    			add_location(div2, file$6, 12, 2, 303);
     			attr_dev(main, "class", "h-full flex svelte-24aa6p");
-    			add_location(main, file$6, 13, 0, 341);
+    			add_location(main, file$6, 7, 0, 143);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -6963,14 +6603,13 @@ var app = (function () {
     			current = true;
     		},
     		p: function update(ctx, [dirty]) {
-    			if ((!current || dirty & /*params*/ 1) && t0_value !== (t0_value = /*params*/ ctx[0].chatId + "")) set_data_dev(t0, t0_value);
+    			if (!current || dirty & /*page*/ 1) set_data_dev(t0, /*page*/ ctx[0]);
     			const messagelist_changes = {};
-    			if (dirty & /*messages*/ 4) messagelist_changes.items = /*messages*/ ctx[2];
 
-    			if (!updating_scrollToIndex && dirty & /*scrollToIndex*/ 2) {
-    				updating_scrollToIndex = true;
-    				messagelist_changes.scrollToIndex = /*scrollToIndex*/ ctx[1];
-    				add_flush_callback(() => updating_scrollToIndex = false);
+    			if (!updating_page && dirty & /*page*/ 1) {
+    				updating_page = true;
+    				messagelist_changes.page = /*page*/ ctx[0];
+    				add_flush_callback(() => updating_page = false);
     			}
 
     			messagelist.$set(messagelist_changes);
@@ -7002,59 +6641,43 @@ var app = (function () {
     }
 
     function instance$6($$self, $$props, $$invalidate) {
-    	let messages;
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots("ChatSingle", slots, []);
     	let { params = {} } = $$props;
-    	let filter = "";
-    	let allItems = loadItems();
-    	let scrollToIndex = undefined;
+    	let page = 0;
     	const writable_props = ["params"];
 
     	Object.keys($$props).forEach(key => {
     		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<ChatSingle> was created with unknown prop '${key}'`);
     	});
 
-    	function messagelist_scrollToIndex_binding(value) {
-    		scrollToIndex = value;
-    		$$invalidate(1, scrollToIndex);
+    	function messagelist_page_binding(value) {
+    		page = value;
+    		$$invalidate(0, page);
     	}
 
     	$$self.$$set = $$props => {
-    		if ("params" in $$props) $$invalidate(0, params = $$props.params);
+    		if ("params" in $$props) $$invalidate(1, params = $$props.params);
     	};
 
-    	$$self.$capture_state = () => ({
-    		MessageList,
-    		loadItems,
-    		loadMore,
-    		params,
-    		filter,
-    		allItems,
-    		scrollToIndex,
-    		messages
-    	});
+    	$$self.$capture_state = () => ({ MessageList, params, page });
 
     	$$self.$inject_state = $$props => {
-    		if ("params" in $$props) $$invalidate(0, params = $$props.params);
-    		if ("filter" in $$props) $$invalidate(4, filter = $$props.filter);
-    		if ("allItems" in $$props) $$invalidate(5, allItems = $$props.allItems);
-    		if ("scrollToIndex" in $$props) $$invalidate(1, scrollToIndex = $$props.scrollToIndex);
-    		if ("messages" in $$props) $$invalidate(2, messages = $$props.messages);
+    		if ("params" in $$props) $$invalidate(1, params = $$props.params);
+    		if ("page" in $$props) $$invalidate(0, page = $$props.page);
     	};
 
     	if ($$props && "$$inject" in $$props) {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	$$invalidate(2, messages = allItems.filter(i => i.message.includes(filter)));
-    	return [params, scrollToIndex, messages, messagelist_scrollToIndex_binding];
+    	return [page, params, messagelist_page_binding];
     }
 
     class ChatSingle extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$6, create_fragment$6, safe_not_equal, { params: 0 });
+    		init(this, options, instance$6, create_fragment$6, safe_not_equal, { params: 1 });
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,

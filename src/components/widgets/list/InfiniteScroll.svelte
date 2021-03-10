@@ -19,6 +19,7 @@
   }
 
   const onScroll = (e) => {
+    console.log("scrolling");
     const element = e.target;
 
     const offset = horizontal

@@ -5124,6 +5124,13 @@ supports-color@^8.1.0:
   dependencies:
     has-flag "^4.0.0"
 
+svelte-scrollto@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/svelte-scrollto/-/svelte-scrollto-0.2.0.tgz#a1da47876466796bba4533a4346537f752f01680"
+  integrity sha512-l4K2E4jr6dXCODtZDCkpp/TzknVVoq8gecHM0UOOmihvLosczdyLuyDUhZ+U2HkhLWi7nnimuOstZSFKtXSpmA==
+  dependencies:
+    svelte "3.x"
+
 svelte-spa-router@^3.1.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/svelte-spa-router/-/svelte-spa-router-3.1.0.tgz#a929f0def7e12c41f32bc356f91685aeadcd75bf"
@@ -5131,7 +5138,7 @@ svelte-spa-router@^3.1.0:
   dependencies:
     regexparam "1.3.0"
 
-svelte@^3.0.0, svelte@^3.31.2:
+svelte@3.x, svelte@^3.0.0, svelte@^3.31.2:
   version "3.35.0"
   resolved "https://registry.yarnpkg.com/svelte/-/svelte-3.35.0.tgz#e0d0ba60c4852181c2b4fd851194be6fda493e65"
   integrity sha512-gknlZkR2sXheu/X+B7dDImwANVvK1R0QGQLd8CNIfxxGPeXBmePnxfzb6fWwTQRsYQG7lYkZXvpXJvxvpsoB7g==

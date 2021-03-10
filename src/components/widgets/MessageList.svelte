@@ -1,7 +1,8 @@
 <script>
   import { onMount, tick } from "svelte";
   import * as animateScroll from "svelte-scrollto";
-  import VirtualList from "./list/VirtualList.svelte";
+  import { loadItems } from "../../util/moc";
+  import MesageInfiniteList from "./list/MesageInfiniteList.svelte";
   import Message from "./Message.svelte";
 
   animateScroll.setGlobalOptions({
@@ -9,33 +10,37 @@
     duration: 100,
   });
 
-  export let items = [];
-  export let start = 0;
-  export let end = 0;
-  export let scrollToIndex = undefined;
+  async function fetchData() {
+    newData = loadItems(page, size);
+  }
+
+  let items = [];
+  let newData = [];
+  export let page = 0;
+  let size = 50;
+  let messageList;
 
   onMount(() => {
-    console.log(items.length);
-    scrollToIndex(end);
-    animateScroll.scrollTo({ element: `post-${end}` });
-    animateScroll.scrollToBottom()
+    fetchData();
   });
+
+  $: items = [...items, ...newData];
 </script>
 
-<div class="list h-full">
-  {scrollToIndex} <br />
-  {start} <br />
-  {end}
-  <VirtualList
+<div class="list h-full" bind:this={messageList}>
+  <MesageInfiniteList
     {items}
-    bind:start
-    bind:end
-    bind:scrollToIndex
-    let:item
-    vId="message-holder"
+    element={messageList}
+    hasMore={newData.length}
+    on:loadMore={() => {
+      page++;
+      fetchData();
+    }}
   >
-    <Message {item} />
-  </VirtualList>
+    <li slot="item" let:index let:item>
+      <Message {item} />
+    </li>
+  </MesageInfiniteList>
 </div>
 
 <style>
