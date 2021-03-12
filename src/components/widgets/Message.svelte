@@ -2,10 +2,11 @@
   export let item;
 </script>
 
-<div class="list-item">{item.message}</div>
+<div class="list-item flex {item.isOwner ? 'sender' : 'reciever'}">
+  <div classname="">
+    <p>{item.message}</p>
+  </div>
+</div>
 
 <style>
-  .list-item {
-    height: 2rem;
-  }
 </style>

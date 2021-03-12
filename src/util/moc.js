@@ -8,6 +8,7 @@ function fill(len) {
             date: "2018-06-02T22:45:00.000Z", // Date object
             author: "Luke",
             message: "Hey how are you?, " + id,
+            isOwner: id % 2
         }
         id++
         return item

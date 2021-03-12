@@ -37,9 +37,9 @@
       fetchData();
     }}
   >
-    <li slot="item" let:index let:item>
+    <div slot="item" let:index let:item>
       <Message {item} />
-    </li>
+    </div>
   </MesageInfiniteList>
 </div>
 

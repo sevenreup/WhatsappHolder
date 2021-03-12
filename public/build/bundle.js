@@ -5811,6 +5811,7 @@ var app = (function () {
                 date: "2018-06-02T22:45:00.000Z", // Date object
                 author: "Luke",
                 message: "Hey how are you?, " + id,
+                isOwner: id % 2
             };
             id++;
             return item
@@ -6206,31 +6207,45 @@ var app = (function () {
     const file$8 = "src\\components\\widgets\\Message.svelte";
 
     function create_fragment$8(ctx) {
-    	let div;
+    	let div1;
+    	let div0;
+    	let p;
     	let t_value = /*item*/ ctx[0].message + "";
     	let t;
+    	let div1_class_value;
 
     	const block = {
     		c: function create() {
-    			div = element("div");
+    			div1 = element("div");
+    			div0 = element("div");
+    			p = element("p");
     			t = text(t_value);
-    			attr_dev(div, "class", "list-item svelte-9qezr5");
-    			add_location(div, file$8, 4, 0, 43);
+    			add_location(p, file$8, 6, 4, 138);
+    			attr_dev(div0, "classname", "");
+    			add_location(div0, file$8, 5, 2, 114);
+    			attr_dev(div1, "class", div1_class_value = "list-item flex " + (/*item*/ ctx[0].isOwner ? "sender" : "reciever"));
+    			add_location(div1, file$8, 4, 0, 43);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
-    			insert_dev(target, div, anchor);
-    			append_dev(div, t);
+    			insert_dev(target, div1, anchor);
+    			append_dev(div1, div0);
+    			append_dev(div0, p);
+    			append_dev(p, t);
     		},
     		p: function update(ctx, [dirty]) {
     			if (dirty & /*item*/ 1 && t_value !== (t_value = /*item*/ ctx[0].message + "")) set_data_dev(t, t_value);
+
+    			if (dirty & /*item*/ 1 && div1_class_value !== (div1_class_value = "list-item flex " + (/*item*/ ctx[0].isOwner ? "sender" : "reciever"))) {
+    				attr_dev(div1, "class", div1_class_value);
+    			}
     		},
     		i: noop,
     		o: noop,
     		d: function destroy(detaching) {
-    			if (detaching) detach_dev(div);
+    			if (detaching) detach_dev(div1);
     		}
     	};
 
@@ -6306,7 +6321,7 @@ var app = (function () {
 
     // (40:4) 
     function create_item_slot(ctx) {
-    	let li;
+    	let div;
     	let message;
     	let current;
 
@@ -6317,14 +6332,14 @@ var app = (function () {
 
     	const block = {
     		c: function create() {
-    			li = element("li");
+    			div = element("div");
     			create_component(message.$$.fragment);
-    			attr_dev(li, "slot", "item");
-    			add_location(li, file$7, 39, 4, 868);
+    			attr_dev(div, "slot", "item");
+    			add_location(div, file$7, 39, 4, 868);
     		},
     		m: function mount(target, anchor) {
-    			insert_dev(target, li, anchor);
-    			mount_component(message, li, null);
+    			insert_dev(target, div, anchor);
+    			mount_component(message, div, null);
     			current = true;
     		},
     		p: function update(ctx, dirty) {
@@ -6342,7 +6357,7 @@ var app = (function () {
     			current = false;
     		},
     		d: function destroy(detaching) {
-    			if (detaching) detach_dev(li);
+    			if (detaching) detach_dev(div);
     			destroy_component(message);
     		}
     	};
