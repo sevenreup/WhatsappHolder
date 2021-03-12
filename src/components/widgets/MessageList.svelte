@@ -27,7 +27,7 @@
   $: items = [...items, ...newData];
 </script>
 
-<div class="list h-full" bind:this={messageList}>
+<div class="list mb-3 bg-gray-100 h-full p-3" bind:this={messageList}>
   <MesageInfiniteList
     {items}
     element={messageList}
@@ -36,10 +36,10 @@
       page++;
       fetchData();
     }}
+    let:index
+    let:item
   >
-    <div slot="item" let:index let:item>
-      <Message {item} />
-    </div>
+    <li class="block relative" slot="item"><Message {item} /></li>
   </MesageInfiniteList>
 </div>
 

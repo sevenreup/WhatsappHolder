@@ -2901,7 +2901,7 @@ var app = (function () {
     	index: /*index*/ ctx[13]
     });
 
-    // (38:42) {item}
+    // (38:37) {item}
     function fallback_block(ctx) {
     	let t_value = /*item*/ ctx[11] + "";
     	let t;
@@ -2925,7 +2925,7 @@ var app = (function () {
     		block,
     		id: fallback_block.name,
     		type: "fallback",
-    		source: "(38:42) {item}",
+    		source: "(38:37) {item}",
     		ctx
     	});
 
@@ -2934,7 +2934,7 @@ var app = (function () {
 
     // (37:2) {#each items as item, index (index)}
     function create_each_block$1(key_1, ctx) {
-    	let div;
+    	let first;
     	let current;
     	const item_slot_template = /*#slots*/ ctx[8].item;
     	const item_slot = create_slot(item_slot_template, ctx, /*$$scope*/ ctx[7], get_item_slot_context);
@@ -2944,16 +2944,15 @@ var app = (function () {
     		key: key_1,
     		first: null,
     		c: function create() {
-    			div = element("div");
+    			first = empty();
     			if (item_slot_or_fallback) item_slot_or_fallback.c();
-    			add_location(div, file$9, 37, 4, 951);
-    			this.first = div;
+    			this.first = first;
     		},
     		m: function mount(target, anchor) {
-    			insert_dev(target, div, anchor);
+    			insert_dev(target, first, anchor);
 
     			if (item_slot_or_fallback) {
-    				item_slot_or_fallback.m(div, null);
+    				item_slot_or_fallback.m(target, anchor);
     			}
 
     			current = true;
@@ -2981,7 +2980,7 @@ var app = (function () {
     			current = false;
     		},
     		d: function destroy(detaching) {
-    			if (detaching) detach_dev(div);
+    			if (detaching) detach_dev(first);
     			if (item_slot_or_fallback) item_slot_or_fallback.d(detaching);
     		}
     	};
@@ -3021,6 +3020,7 @@ var app = (function () {
     				each_blocks[i].c();
     			}
 
+    			attr_dev(main, "class", "flex flex-col");
     			add_location(main, file$9, 35, 0, 877);
     		},
     		l: function claim(nodes) {
@@ -3258,45 +3258,115 @@ var app = (function () {
     const file$8 = "src\\components\\widgets\\Message.svelte";
 
     function create_fragment$9(ctx) {
-    	let div1;
+    	let div3;
     	let div0;
+    	let img;
+    	let img_src_value;
+    	let div0_class_value;
+    	let t0;
+    	let div2;
     	let p;
-    	let t_value = /*item*/ ctx[0].message + "";
-    	let t;
+    	let t1_value = /*item*/ ctx[0].message + "";
+    	let t1;
+    	let p_class_value;
+    	let t2;
+    	let div1;
+    	let time;
+    	let t3_value = (!/*item*/ ctx[0].isOwner ? /*item*/ ctx[0].author : "") + "";
+    	let t3;
+    	let t4;
     	let div1_class_value;
+    	let div2_class_value;
+    	let div3_class_value;
 
     	const block = {
     		c: function create() {
-    			div1 = element("div");
+    			div3 = element("div");
     			div0 = element("div");
+    			img = element("img");
+    			t0 = space();
+    			div2 = element("div");
     			p = element("p");
-    			t = text(t_value);
-    			add_location(p, file$8, 6, 4, 138);
-    			attr_dev(div0, "classname", "");
-    			add_location(div0, file$8, 5, 2, 114);
-    			attr_dev(div1, "class", div1_class_value = "list-item flex " + (/*item*/ ctx[0].isOwner ? "sender" : "reciever"));
-    			add_location(div1, file$8, 4, 0, 43);
+    			t1 = text(t1_value);
+    			t2 = space();
+    			div1 = element("div");
+    			time = element("time");
+    			t3 = text(t3_value);
+    			t4 = text(" 9: 00");
+    			if (img.src !== (img_src_value = "https://placeimg.com/80/80/animals")) attr_dev(img, "src", img_src_value);
+    			attr_dev(img, "alt", "profile");
+    			attr_dev(img, "class", "rounded-full w-12 h-12 m-auto");
+    			add_location(img, file$8, 10, 4, 253);
+    			attr_dev(div0, "class", div0_class_value = /*item*/ ctx[0].isOwner ? "ml-2 order-1" : "mr-2");
+    			add_location(div0, file$8, 9, 2, 195);
+
+    			attr_dev(p, "class", p_class_value = "rounded-t-3xl p-2 text-white " + (/*item*/ ctx[0].isOwner
+    			? "bg-indigo-400  rounded-bl-3xl"
+    			: "bg-blue-400 rounded-br-3xl"));
+
+    			add_location(p, file$8, 17, 4, 477);
+    			add_location(time, file$8, 25, 6, 729);
+    			attr_dev(div1, "class", div1_class_value = /*item*/ ctx[0].isOwner ? "text-right" : "text-left");
+    			add_location(div1, file$8, 24, 4, 666);
+    			attr_dev(div2, "class", div2_class_value = "max-w-3xl relative " + (/*item*/ ctx[0].isOwner ? "justify-end items-end" : ""));
+    			add_location(div2, file$8, 16, 2, 393);
+
+    			attr_dev(div3, "class", div3_class_value = "list-item  justify-items-end relative " + (/*item*/ ctx[0].isOwner
+    			? "sender flex justify-end"
+    			: "reciever inline-flex justify-start"));
+
+    			add_location(div3, file$8, 4, 0, 43);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
-    			insert_dev(target, div1, anchor);
-    			append_dev(div1, div0);
-    			append_dev(div0, p);
-    			append_dev(p, t);
+    			insert_dev(target, div3, anchor);
+    			append_dev(div3, div0);
+    			append_dev(div0, img);
+    			append_dev(div3, t0);
+    			append_dev(div3, div2);
+    			append_dev(div2, p);
+    			append_dev(p, t1);
+    			append_dev(div2, t2);
+    			append_dev(div2, div1);
+    			append_dev(div1, time);
+    			append_dev(time, t3);
+    			append_dev(time, t4);
     		},
     		p: function update(ctx, [dirty]) {
-    			if (dirty & /*item*/ 1 && t_value !== (t_value = /*item*/ ctx[0].message + "")) set_data_dev(t, t_value);
+    			if (dirty & /*item*/ 1 && div0_class_value !== (div0_class_value = /*item*/ ctx[0].isOwner ? "ml-2 order-1" : "mr-2")) {
+    				attr_dev(div0, "class", div0_class_value);
+    			}
 
-    			if (dirty & /*item*/ 1 && div1_class_value !== (div1_class_value = "list-item flex " + (/*item*/ ctx[0].isOwner ? "sender" : "reciever"))) {
+    			if (dirty & /*item*/ 1 && t1_value !== (t1_value = /*item*/ ctx[0].message + "")) set_data_dev(t1, t1_value);
+
+    			if (dirty & /*item*/ 1 && p_class_value !== (p_class_value = "rounded-t-3xl p-2 text-white " + (/*item*/ ctx[0].isOwner
+    			? "bg-indigo-400  rounded-bl-3xl"
+    			: "bg-blue-400 rounded-br-3xl"))) {
+    				attr_dev(p, "class", p_class_value);
+    			}
+
+    			if (dirty & /*item*/ 1 && t3_value !== (t3_value = (!/*item*/ ctx[0].isOwner ? /*item*/ ctx[0].author : "") + "")) set_data_dev(t3, t3_value);
+
+    			if (dirty & /*item*/ 1 && div1_class_value !== (div1_class_value = /*item*/ ctx[0].isOwner ? "text-right" : "text-left")) {
     				attr_dev(div1, "class", div1_class_value);
+    			}
+
+    			if (dirty & /*item*/ 1 && div2_class_value !== (div2_class_value = "max-w-3xl relative " + (/*item*/ ctx[0].isOwner ? "justify-end items-end" : ""))) {
+    				attr_dev(div2, "class", div2_class_value);
+    			}
+
+    			if (dirty & /*item*/ 1 && div3_class_value !== (div3_class_value = "list-item  justify-items-end relative " + (/*item*/ ctx[0].isOwner
+    			? "sender flex justify-end"
+    			: "reciever inline-flex justify-start"))) {
+    				attr_dev(div3, "class", div3_class_value);
     			}
     		},
     		i: noop,
     		o: noop,
     		d: function destroy(detaching) {
-    			if (detaching) detach_dev(div1);
+    			if (detaching) detach_dev(div3);
     		}
     	};
 
@@ -3370,32 +3440,33 @@ var app = (function () {
     /* src\components\widgets\MessageList.svelte generated by Svelte v3.35.0 */
     const file$7 = "src\\components\\widgets\\MessageList.svelte";
 
-    // (40:4) 
+    // (42:4) 
     function create_item_slot(ctx) {
-    	let div;
+    	let li;
     	let message;
     	let current;
 
     	message = new Message({
-    			props: { item: /*item*/ ctx[8] },
+    			props: { item: /*item*/ ctx[9] },
     			$$inline: true
     		});
 
     	const block = {
     		c: function create() {
-    			div = element("div");
+    			li = element("li");
     			create_component(message.$$.fragment);
-    			attr_dev(div, "slot", "item");
-    			add_location(div, file$7, 39, 4, 868);
+    			attr_dev(li, "class", "block relative");
+    			attr_dev(li, "slot", "item");
+    			add_location(li, file$7, 41, 4, 918);
     		},
     		m: function mount(target, anchor) {
-    			insert_dev(target, div, anchor);
-    			mount_component(message, div, null);
+    			insert_dev(target, li, anchor);
+    			mount_component(message, li, null);
     			current = true;
     		},
     		p: function update(ctx, dirty) {
     			const message_changes = {};
-    			if (dirty & /*item*/ 256) message_changes.item = /*item*/ ctx[8];
+    			if (dirty & /*item*/ 512) message_changes.item = /*item*/ ctx[9];
     			message.$set(message_changes);
     		},
     		i: function intro(local) {
@@ -3408,7 +3479,7 @@ var app = (function () {
     			current = false;
     		},
     		d: function destroy(detaching) {
-    			if (detaching) detach_dev(div);
+    			if (detaching) detach_dev(li);
     			destroy_component(message);
     		}
     	};
@@ -3417,7 +3488,7 @@ var app = (function () {
     		block,
     		id: create_item_slot.name,
     		type: "slot",
-    		source: "(40:4) ",
+    		source: "(42:4) ",
     		ctx
     	});
 
@@ -3437,8 +3508,8 @@ var app = (function () {
     				$$slots: {
     					item: [
     						create_item_slot,
-    						({ item, index }) => ({ 8: item, 9: index }),
-    						({ item, index }) => (item ? 256 : 0) | (index ? 512 : 0)
+    						({ index, item }) => ({ 8: index, 9: item }),
+    						({ index, item }) => (index ? 256 : 0) | (item ? 512 : 0)
     					]
     				},
     				$$scope: { ctx }
@@ -3452,7 +3523,7 @@ var app = (function () {
     		c: function create() {
     			div = element("div");
     			create_component(mesageinfinitelist.$$.fragment);
-    			attr_dev(div, "class", "list h-full svelte-2o7hc8");
+    			attr_dev(div, "class", "list mb-3 bg-gray-100 h-full p-3 svelte-2o7hc8");
     			add_location(div, file$7, 29, 0, 646);
     		},
     		l: function claim(nodes) {
@@ -3470,7 +3541,7 @@ var app = (function () {
     			if (dirty & /*messageList*/ 8) mesageinfinitelist_changes.element = /*messageList*/ ctx[3];
     			if (dirty & /*newData*/ 4) mesageinfinitelist_changes.hasMore = /*newData*/ ctx[2].length;
 
-    			if (dirty & /*$$scope, item*/ 1280) {
+    			if (dirty & /*$$scope, item*/ 1536) {
     				mesageinfinitelist_changes.$$scope = { dirty, ctx };
     			}
 

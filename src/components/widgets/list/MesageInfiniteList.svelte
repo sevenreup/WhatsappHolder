@@ -33,8 +33,8 @@
   }
 </script>
 
-<main bind:this={component}>
+<main bind:this={component} class="flex flex-col">
   {#each items as item, index (index)}
-    <div><slot name="item" {item} {index}>{item}</slot></div>
+    <slot name="item" {item} {index}>{item}</slot>
   {/each}
 </main>
