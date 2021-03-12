@@ -1,22 +1,34 @@
 <script>
+  import { onMount } from "svelte";
+  import ChatHeader from "../../components/widgets/ChatHeader.svelte";
+  import ChatInfoSidebar from "../../components/widgets/ChatInfoSidebar.svelte";
   import MessageList from "../../components/widgets/MessageList.svelte";
   export let params = {};
 
   let page = 0;
+  let user = {};
+  let openSidebar = false;
+
+  onMount(() => {
+    console.log(params);
+    user = {
+      id: params.chatId,
+      name: "Jon A (" + params.chatId + ")",
+      isGroup: params.chatId % 3,
+    };
+  });
 </script>
 
-<main class="h-full flex">
-  <div class="message-container h-full w-4/5">
-    <div class="chat-info">{page}</div>
+<main class="h-full overflow-hidden flex">
+  <div
+    class="message-container h-full w-full transition-all duration-500 ease-in-out"
+    style="margin-right: {openSidebar ? '300px' : '0px'};"
+  >
+    <ChatHeader
+      chat={user}
+      on:openSidebar={() => (openSidebar = !openSidebar)}
+    />
     <MessageList bind:page />
   </div>
-  <div class="sidebar h-full h-1/5">this is side bar</div>
+  <ChatInfoSidebar open={openSidebar} />
 </main>
-
-<style>
-  main {
-  }
-  .chat-info {
-    width: auto;
-  }
-</style>

@@ -13,10 +13,10 @@
   async function fetchData() {
     newData = loadItems(page, size);
   }
-
+  
+  export let page = 0;
   let items = [];
   let newData = [];
-  export let page = 0;
   let size = 50;
   let messageList;
 
@@ -27,7 +27,7 @@
   $: items = [...items, ...newData];
 </script>
 
-<div class="list mb-3 bg-gray-100 h-full p-3" bind:this={messageList}>
+<div class="list flex relative mb-3 h-full p-3 w-full" bind:this={messageList}>
   <MesageInfiniteList
     {items}
     element={messageList}
@@ -45,10 +45,7 @@
 
 <style>
   .list {
-    position: relative;
-    display: flex;
     flex-flow: column nowrap;
     overflow: auto;
-    border: 1px solid;
   }
 </style>

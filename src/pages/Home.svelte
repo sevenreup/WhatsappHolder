@@ -13,7 +13,7 @@
 
 <main class="chat-grid">
   <ChatSidebar />
-  <section class="chat-content overflow-y-scroll">
+  <section class="chat-content overflow-y-auto p-2  bg-gray-100">
     <Router {routes} {prefix} />
   </section>
 </main>
@@ -24,7 +24,5 @@
     grid-template-columns: 25% auto;
     height: 100%;
     overflow: hidden;
-  }
-  .chat-content {
   }
 </style>

@@ -27,7 +27,26 @@ const loadItems = (page, amount) => {
 
 let loadMore = () => (fill(1000));
 
+const getChats = (len) => {
+    const fn = () => {
+        const item = {
+            id: id,
+            name: "Jon A (" + id + ")",
+            isGroup: id % 3
+        };
+        id++
+        return item
+    }
+    return Array(len).fill().map(_ => fn())
+}
+
+const getUserByID = (id) => {
+    
+}
+
 export {
     loadItems,
-    loadMore
+    loadMore,
+    getChats,
+    getUserByID
 }
