@@ -1,7 +1,6 @@
 <script>
   import { onMount } from "svelte";
   import active from "svelte-spa-router/active";
-  import { List } from "smelte";
   import { push } from "svelte-spa-router";
   import InfiniteScroll from "./widgets/list/InfiniteScroll.svelte";
   import SearchBar from "./widgets/SearchBar.svelte";
@@ -41,8 +40,8 @@
 <nav class="p-9">
   <SearchBar />
   <div bind:this={chatList}>
-    <List bind:value={selected} items={data} dense navigation>
-      <li slot="item" let:item>
+    {#each data as item}
+      <li let:item>
         <div
           class="cursor-pointer rounded-3xl p-2 my-2 chat flex"
           use:active={{
@@ -71,7 +70,7 @@
           </div>
         </div>
       </li>
-    </List>
+    {/each}
   </div>
   <InfiniteScroll
     hasMore={newBatch.length}

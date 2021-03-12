@@ -1,6 +1,5 @@
 <script>
   import { push } from "svelte-spa-router";
-  import { Button } from "smelte";
   let links = [
     { path: "/chat", icon: "home", name: "Chats" },
     { path: "/import", icon: "import_export", name: "Import" },
@@ -9,7 +8,7 @@
 
 <main>
   {#each links as { path, icon, name }}
-    <Button {icon} text on:click={() => push(path)}>{name}</Button>
+    <button on:click={() => push(path)}>{name}</button>
   {/each}
 </main>
 

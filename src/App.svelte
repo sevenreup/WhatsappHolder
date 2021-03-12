@@ -1,5 +1,4 @@
 <script>
-  import "smelte/src/tailwind.css";
   import Home from "./pages/Home.svelte";
   import Router, { replace } from "svelte-spa-router";
   import MainSidebar from "./components/MainSidebar.svelte";
@@ -7,6 +6,7 @@
   import ImportChat from "./pages/ImportChat.svelte";
   import EmptyState from "./pages/EmptyState.svelte";
   import { wrap } from "svelte-spa-router/wrap";
+  import Tailwind from "./components/Tailwind.svelte";
   let routes = {
     "/": Home,
     "/chat": Home,
@@ -20,6 +20,8 @@
   }
 </script>
 
+<Tailwind />
+
 <main class="main-grid">
   <nav class="toolbar">
     <AppBar />
@@ -32,7 +34,7 @@
   </section>
 </main>
 
-<style>
+<style>  
   .main-grid {
     display: grid;
     height: 100vh;
