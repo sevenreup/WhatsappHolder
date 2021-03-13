@@ -14,7 +14,6 @@
 
   $: {
     if (element) {
-      console.log(element);
       element.addEventListener("scroll", (e) => {
         const offset = horizontal
           ? e.target.scrollWidth - e.target.clientWidth - e.target.scrollLeft

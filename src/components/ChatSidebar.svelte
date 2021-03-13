@@ -1,7 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import active from "svelte-spa-router/active";
-  import { push } from "svelte-spa-router";
+  import { push, replace } from "svelte-spa-router";
   import InfiniteScroll from "./widgets/list/InfiniteScroll.svelte";
   import SearchBar from "./widgets/SearchBar.svelte";
   import { getChats } from "../util/moc";
@@ -19,7 +19,6 @@
     //   `https://api.openbrewerydb.org/breweries?by_city=los_angeles&page=${page}`
     // );
     newBatch = getChats(20);
-    console.log(newBatch);
   }
 
   onMount(() => {

@@ -1,5 +1,6 @@
 <script>
   import { onMount } from "svelte";
+  import { location } from "svelte-spa-router";
   import ChatHeader from "../../components/widgets/ChatHeader.svelte";
   import ChatInfoSidebar from "../../components/widgets/ChatInfoSidebar.svelte";
   import MessageList from "../../components/widgets/MessageList.svelte";
@@ -10,7 +11,8 @@
   let openSidebar = false;
 
   onMount(() => {
-    console.log(params);
+    location.subscribe((v) => console.log(v));
+    console.log(location);
     user = {
       id: params.chatId,
       name: "Jon A (" + params.chatId + ")",
@@ -30,5 +32,5 @@
     />
     <MessageList bind:page />
   </div>
-  <ChatInfoSidebar open={openSidebar} />
+  <ChatInfoSidebar open={openSidebar} {user} on:close={() => openSidebar = !openSidebar}/>
 </main>

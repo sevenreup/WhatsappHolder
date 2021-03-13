@@ -30,7 +30,7 @@
     <MainSidebar />
   </nav>
   <section class="main">
-    <Router {routes} on:conditionsFailed={conditionsFailed} />
+    <Router {routes} on:conditionsFailed={conditionsFailed}/>
   </section>
 </main>
 

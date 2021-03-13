@@ -3,18 +3,21 @@
   import ChatSidebar from "../components/ChatSidebar.svelte";
   import ChatsEmpty from "./chats/ChatsEmpty.svelte";
   import ChatSingle from "./chats/ChatSingle.svelte";
+  export let params = {};
 
   const prefix = "/chat";
   const routes = {
     "/:chatId": ChatSingle,
     "/*": ChatsEmpty,
   };
+
+  console.log(params);
 </script>
 
 <main class="chat-grid">
   <ChatSidebar />
   <section class="chat-content overflow-y-auto p-2  bg-gray-100">
-    <Router {routes} {prefix} />
+    <Router {routes} {prefix} on:routeLoaded={(e) => console.log(e)}/>
   </section>
 </main>
 

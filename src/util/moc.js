@@ -1,4 +1,5 @@
 let id = 0;
+let id2 = 0;
 let totalMessages = 100;
 
 function fill(len) {
@@ -30,11 +31,11 @@ let loadMore = () => (fill(1000));
 const getChats = (len) => {
     const fn = () => {
         const item = {
-            id: id,
-            name: "Jon A (" + id + ")",
-            isGroup: id % 3
+            id: id2,
+            name: "Jon A (" + id2 + ")",
+            isGroup: id2 % 3
         };
-        id++
+        id2++
         return item
     }
     return Array(len).fill().map(_ => fn())

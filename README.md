@@ -13,6 +13,10 @@ This project is using Svelte for the UI and its running in Electron. You get all
  - `yarn run start` (to launch the electron with hot reload)
  - `yarn run package` (to build the binaries for your system)
 
-  
+## Future plans (all lies)
+
+- pin chats
+- import contacts to associate with chats
+- import chats from other messengers
 
 > 
