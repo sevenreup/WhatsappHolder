@@ -45,7 +45,7 @@
         }}
         on:click={() => {
           selected = item.id;
-          push(`/chat/${item.id}`);
+          push(`/chat/${item.id}/${item.name}`);
         }}
       >
         <img

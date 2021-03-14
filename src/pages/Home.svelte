@@ -7,7 +7,7 @@
 
   const prefix = "/chat";
   const routes = {
-    "/:chatId": ChatSingle,
+    "/:chatId/*": ChatSingle,
     "/*": ChatsEmpty,
   };
 
@@ -17,7 +17,7 @@
 <main class="chat-grid">
   <ChatSidebar />
   <section class="chat-content overflow-y-auto p-2  bg-gray-100">
-    <Router {routes} {prefix} on:routeLoaded={(e) => console.log(e)}/>
+    <Router {routes} {prefix} on:routeLoaded={(e) => console.log(e)} restoreScrollState={true}/>
   </section>
 </main>
 

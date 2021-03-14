@@ -5,7 +5,6 @@
   import AppBar from "./components/AppBar.svelte";
   import ImportChat from "./pages/ImportChat.svelte";
   import EmptyState from "./pages/EmptyState.svelte";
-  import { wrap } from "svelte-spa-router/wrap";
   import Tailwind from "./components/Tailwind.svelte";
   let routes = {
     "/": Home,
@@ -30,11 +29,15 @@
     <MainSidebar />
   </nav>
   <section class="main">
-    <Router {routes} on:conditionsFailed={conditionsFailed}/>
+    <Router
+      {routes}
+      on:conditionsFailed={conditionsFailed}
+      restoreScrollState={true}
+    />
   </section>
 </main>
 
-<style>  
+<style>
   .main-grid {
     display: grid;
     height: 100vh;
