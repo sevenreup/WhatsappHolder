@@ -1,23 +1,36 @@
 <script>
-  import Router from "svelte-spa-router";
+  import { onMount } from "svelte";
+  import Router, { location } from "svelte-spa-router";
   import ChatSidebar from "../components/ChatSidebar.svelte";
   import ChatsEmpty from "./chats/ChatsEmpty.svelte";
   import ChatSingle from "./chats/ChatSingle.svelte";
+  import { lastChatURL } from "../store";
   export let params = {};
 
   const prefix = "/chat";
   const routes = {
-    "/:chatId/*": ChatSingle,
+    "/:chatId": ChatSingle,
     "/*": ChatsEmpty,
   };
 
-  console.log(params);
+  onMount(() => {
+    location.subscribe((v) => {
+      if (new RegExp("chat*").test(v)) {
+        lastChatURL.set(v);
+      }
+    });
+  });
 </script>
 
 <main class="chat-grid">
   <ChatSidebar />
   <section class="chat-content overflow-y-auto p-2  bg-gray-100">
-    <Router {routes} {prefix} on:routeLoaded={(e) => console.log(e)} restoreScrollState={true}/>
+    <Router
+      {routes}
+      {prefix}
+      on:routeLoaded={(e) => console.log(e)}
+      restoreScrollState={true}
+    />
   </section>
 </main>
 

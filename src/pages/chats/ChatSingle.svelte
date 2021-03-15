@@ -1,7 +1,5 @@
 <script>
-  import { onMount } from "svelte";
-  import { fade } from 'svelte/transition';
-  import { location } from "svelte-spa-router";
+  import { fade } from "svelte/transition";
   import ChatHeader from "../../components/widgets/ChatHeader.svelte";
   import ChatInfoSidebar from "../../components/widgets/ChatInfoSidebar.svelte";
   import MessageList from "../../components/widgets/MessageList.svelte";
@@ -15,11 +13,6 @@
     name: "Jon A (" + params.chatId + ")",
     isGroup: params.chatId % 3,
   };
-
-  onMount(() => {
-    location.subscribe((v) => console.log(v, params));
-    console.log(location);
-  });
 </script>
 
 <main class="h-full overflow-hidden flex" transition:fade>
@@ -31,7 +24,7 @@
       chat={user}
       on:openSidebar={() => (openSidebar = !openSidebar)}
     />
-    <MessageList bind:page />
+    <MessageList bind:page {user}/>
   </div>
   <ChatInfoSidebar
     open={openSidebar}

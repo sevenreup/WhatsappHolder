@@ -24,9 +24,8 @@
   onMount(() => {
     // load first batch onMount
     fetchData();
+    data = [...data, ...newBatch];
   });
-
-  $: data = [...data, ...newBatch];
 
   let selected;
   let chatList;
@@ -45,7 +44,7 @@
         }}
         on:click={() => {
           selected = item.id;
-          push(`/chat/${item.id}/${item.name}`);
+          push(`/chat/${item.id}`);
         }}
       >
         <img

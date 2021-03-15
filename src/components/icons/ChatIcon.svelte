@@ -3,11 +3,10 @@
 </script>
 
 <svg
-  id="Capa_1"
-  enable-background="new 0 0 512 512"
-  height="512"
+  enable-background="new 0 0 40 40"
+  height="40"
   viewBox="0 0 512 512"
-  width="512"
+  width="40"
   xmlns="http://www.w3.org/2000/svg"
   class="{classList}"
   ><g

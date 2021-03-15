@@ -1,14 +1,13 @@
 let id = 0;
-let id2 = 0;
 let totalMessages = 100;
 
-function fill(len) {
+function fill(len, user) {
     const fn = () => {
         const item = {
             id,
             date: "2018-06-02T22:45:00.000Z", // Date object
-            author: "Luke",
-            message: "Hey how are you?, " + id,
+            author: id % 2 ? "Luke" : user.name,
+            message: `Hey how are you?, ${id % 2 ? id : user.id}`,
             isOwner: id % 2
         }
         id++
@@ -17,10 +16,10 @@ function fill(len) {
     return Array(len).fill().map(_ => fn())
 }
 
-const loadItems = (page, amount) => {
+const loadItems = (page, amount, user) => {
     const offset = (page * amount);
     if (offset < totalMessages) {
-        return fill(amount)
+        return fill(amount, user)
     } else {
         return []
     }
@@ -29,6 +28,7 @@ const loadItems = (page, amount) => {
 let loadMore = () => (fill(1000));
 
 const getChats = (len) => {
+    let id2 = 0;
     const fn = () => {
         const item = {
             id: id2,
@@ -42,7 +42,7 @@ const getChats = (len) => {
 }
 
 const getUserByID = (id) => {
-    
+
 }
 
 export {

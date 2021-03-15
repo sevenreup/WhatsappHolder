@@ -11,18 +11,17 @@
   });
 
   async function fetchData() {
-    newData = loadItems(page, size);
+    newData = loadItems(page, size, user);
   }
   
   export let page = 0;
+  export let user = {}
   let items = [];
-  let newData = [];
   let size = 50;
   let messageList;
 
-  onMount(() => {
-    fetchData();
-  });
+
+  $: newData = loadItems(page, size, user)
 
   $: items = [...items, ...newData];
 </script>
