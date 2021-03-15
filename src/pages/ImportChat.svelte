@@ -1,1 +1,18 @@
-<main>red</main>
+<script>
+  import Dropzone from "svelte-file-dropzone";
+
+  let files = {
+    accepted: [],
+    rejected: [],
+  };
+
+  function handleFilesSelect(e) {
+    const { acceptedFiles, fileRejections } = e.detail;
+    files.accepted = [...files.accepted, ...acceptedFiles];
+    files.rejected = [...files.rejected, ...fileRejections];
+  }
+</script>
+
+<main>
+  <Dropzone on:drop={handleFilesSelect} accept={["application/json", ".zip"]} />
+</main>

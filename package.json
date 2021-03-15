@@ -52,6 +52,7 @@
     "electron-squirrel-startup": "^1.0.0",
     "sirv-cli": "^1.0.0",
     "smelte": "^1.1.5",
+    "svelte-file-dropzone": "^0.0.15",
     "svelte-spa-router": "^3.1.0",
     "whatsapp-chat-parser": "^3.1.0"
   },
