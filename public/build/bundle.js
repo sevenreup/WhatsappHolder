@@ -162,6 +162,59 @@ var app = (function () {
     function set_style(node, key, value, important) {
         node.style.setProperty(key, value, important ? 'important' : '');
     }
+    // unfortunately this can't be a constant as that wouldn't be tree-shakeable
+    // so we cache the result instead
+    let crossorigin;
+    function is_crossorigin() {
+        if (crossorigin === undefined) {
+            crossorigin = false;
+            try {
+                if (typeof window !== 'undefined' && window.parent) {
+                    void window.parent.document;
+                }
+            }
+            catch (error) {
+                crossorigin = true;
+            }
+        }
+        return crossorigin;
+    }
+    function add_resize_listener(node, fn) {
+        const computed_style = getComputedStyle(node);
+        if (computed_style.position === 'static') {
+            node.style.position = 'relative';
+        }
+        const iframe = element('iframe');
+        iframe.setAttribute('style', 'display: block; position: absolute; top: 0; left: 0; width: 100%; height: 100%; ' +
+            'overflow: hidden; border: 0; opacity: 0; pointer-events: none; z-index: -1;');
+        iframe.setAttribute('aria-hidden', 'true');
+        iframe.tabIndex = -1;
+        const crossorigin = is_crossorigin();
+        let unsubscribe;
+        if (crossorigin) {
+            iframe.src = "data:text/html,<script>onresize=function(){parent.postMessage(0,'*')}</script>";
+            unsubscribe = listen(window, 'message', (event) => {
+                if (event.source === iframe.contentWindow)
+                    fn();
+            });
+        }
+        else {
+            iframe.src = 'about:blank';
+            iframe.onload = () => {
+                unsubscribe = listen(iframe.contentWindow, 'resize', fn);
+            };
+        }
+        append(node, iframe);
+        return () => {
+            if (crossorigin) {
+                unsubscribe();
+            }
+            else if (unsubscribe && iframe.contentWindow) {
+                unsubscribe();
+            }
+            detach(iframe);
+        };
+    }
     function custom_event(type, detail) {
         const e = document.createEvent('CustomEvent');
         e.initCustomEvent(type, false, false, detail);
@@ -2265,15 +2318,16 @@ var app = (function () {
     			attr_dev(input, "type", "text");
     			attr_dev(input, "placeholder", "Search");
     			attr_dev(input, "class", "pb-2 pt-2 rounded-full text-black dark:text-gray-100 w-full caret-primary-500 bg-gray-100 dark:bg-dark-600 pr-4 pl-10 ");
-    			add_location(input, file$h, 2, 4, 58);
+    			add_location(input, file$h, 6, 4, 129);
     			attr_dev(i, "class", "material-icons icon text-xl select-none duration-200 ease-in");
-    			add_location(i, file$h, 10, 6, 357);
-    			attr_dev(div0, "class", "absolute left-0 top-0 pb-2 pl-2 pt-2 text-xs text-gray-700 z-10");
-    			add_location(div0, file$h, 7, 4, 259);
+    			add_location(i, file$h, 14, 6, 428);
+    			attr_dev(div0, "class", "absolute left-0 top-0 pb-2 pl-4 pt-4 text-xs text-gray-700 z-10");
+    			add_location(div0, file$h, 11, 4, 330);
     			attr_dev(form, "action", "");
-    			add_location(form, file$h, 1, 2, 36);
-    			attr_dev(div1, "class", "searchbar relative");
-    			add_location(div1, file$h, 0, 0, 0);
+    			add_location(form, file$h, 5, 2, 107);
+    			attr_dev(div1, "class", "searchbar fixed p-2");
+    			set_style(div1, "width", /*width*/ ctx[0] + "px");
+    			add_location(div1, file$h, 4, 0, 44);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -2286,7 +2340,11 @@ var app = (function () {
     			append_dev(form, div0);
     			append_dev(div0, i);
     		},
-    		p: noop,
+    		p: function update(ctx, [dirty]) {
+    			if (dirty & /*width*/ 1) {
+    				set_style(div1, "width", /*width*/ ctx[0] + "px");
+    			}
+    		},
     		i: noop,
     		o: noop,
     		d: function destroy(detaching) {
@@ -2305,22 +2363,37 @@ var app = (function () {
     	return block;
     }
 
-    function instance$i($$self, $$props) {
+    function instance$i($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots("SearchBar", slots, []);
-    	const writable_props = [];
+    	let { width } = $$props;
+    	const writable_props = ["width"];
 
     	Object.keys($$props).forEach(key => {
     		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<SearchBar> was created with unknown prop '${key}'`);
     	});
 
-    	return [];
+    	$$self.$$set = $$props => {
+    		if ("width" in $$props) $$invalidate(0, width = $$props.width);
+    	};
+
+    	$$self.$capture_state = () => ({ width });
+
+    	$$self.$inject_state = $$props => {
+    		if ("width" in $$props) $$invalidate(0, width = $$props.width);
+    	};
+
+    	if ($$props && "$$inject" in $$props) {
+    		$$self.$inject_state($$props.$$inject);
+    	}
+
+    	return [width];
     }
 
     class SearchBar extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$i, create_fragment$i, safe_not_equal, {});
+    		init(this, options, instance$i, create_fragment$i, safe_not_equal, { width: 0 });
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
@@ -2328,6 +2401,21 @@ var app = (function () {
     			options,
     			id: create_fragment$i.name
     		});
+
+    		const { ctx } = this.$$;
+    		const props = options.props || {};
+
+    		if (/*width*/ ctx[0] === undefined && !("width" in props)) {
+    			console.warn("<SearchBar> was created without expected prop 'width'");
+    		}
+    	}
+
+    	get width() {
+    		throw new Error("<SearchBar>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	set width(value) {
+    		throw new Error("<SearchBar>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
     }
 
@@ -2377,11 +2465,11 @@ var app = (function () {
 
     function get_each_context$3(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[10] = list[i];
+    	child_ctx[12] = list[i];
     	return child_ctx;
     }
 
-    // (37:4) {#each data as item}
+    // (38:4) {#each data as item}
     function create_each_block$3(ctx) {
     	let div2;
     	let img;
@@ -2390,7 +2478,7 @@ var app = (function () {
     	let t0;
     	let div1;
     	let span0;
-    	let t1_value = /*item*/ ctx[10].name + "";
+    	let t1_value = /*item*/ ctx[12].name + "";
     	let t1;
     	let t2;
     	let div0;
@@ -2403,7 +2491,7 @@ var app = (function () {
     	let dispose;
 
     	function click_handler() {
-    		return /*click_handler*/ ctx[6](/*item*/ ctx[10]);
+    		return /*click_handler*/ ctx[7](/*item*/ ctx[12]);
     	}
 
     	const block = {
@@ -2423,20 +2511,20 @@ var app = (function () {
     			span2.textContent = "19:08";
     			t6 = space();
     			if (img.src !== (img_src_value = "https://placeimg.com/80/80/animals")) attr_dev(img, "src", img_src_value);
-    			attr_dev(img, "alt", img_alt_value = /*item*/ ctx[10].name);
+    			attr_dev(img, "alt", img_alt_value = /*item*/ ctx[12].name);
     			attr_dev(img, "class", "rounded-full w-12 h-12 m-auto");
-    			add_location(img, file$g, 49, 8, 1388);
+    			add_location(img, file$g, 50, 8, 1452);
     			attr_dev(span0, "class", "subtitle-1 font-semibold");
-    			add_location(span0, file$g, 55, 10, 1571);
+    			add_location(span0, file$g, 56, 10, 1635);
     			attr_dev(span1, "class", "w-10/12 truncate");
-    			add_location(span1, file$g, 57, 12, 1672);
-    			add_location(span2, file$g, 60, 12, 1786);
+    			add_location(span1, file$g, 58, 12, 1736);
+    			add_location(span2, file$g, 61, 12, 1850);
     			attr_dev(div0, "class", "flex");
-    			add_location(div0, file$g, 56, 10, 1640);
+    			add_location(div0, file$g, 57, 10, 1704);
     			attr_dev(div1, "class", "p-2");
-    			add_location(div1, file$g, 54, 8, 1542);
+    			add_location(div1, file$g, 55, 8, 1606);
     			attr_dev(div2, "class", "cursor-pointer rounded-3xl p-2 my-2 chat flex svelte-logz9g");
-    			add_location(div2, file$g, 37, 6, 1010);
+    			add_location(div2, file$g, 38, 6, 1074);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div2, anchor);
@@ -2455,7 +2543,7 @@ var app = (function () {
     			if (!mounted) {
     				dispose = [
     					action_destroyer(active_action = active.call(null, div2, {
-    						path: `/chat/${/*item*/ ctx[10].id}`,
+    						path: `/chat/${/*item*/ ctx[12].id}`,
     						className: "bg-gradient-to-r from-blue-600 to-blue-300 text-white",
     						inactiveClassName: ""
     					})),
@@ -2468,14 +2556,14 @@ var app = (function () {
     		p: function update(new_ctx, dirty) {
     			ctx = new_ctx;
 
-    			if (dirty & /*data*/ 2 && img_alt_value !== (img_alt_value = /*item*/ ctx[10].name)) {
+    			if (dirty & /*data*/ 2 && img_alt_value !== (img_alt_value = /*item*/ ctx[12].name)) {
     				attr_dev(img, "alt", img_alt_value);
     			}
 
-    			if (dirty & /*data*/ 2 && t1_value !== (t1_value = /*item*/ ctx[10].name + "")) set_data_dev(t1, t1_value);
+    			if (dirty & /*data*/ 2 && t1_value !== (t1_value = /*item*/ ctx[12].name + "")) set_data_dev(t1, t1_value);
 
     			if (active_action && is_function(active_action.update) && dirty & /*data*/ 2) active_action.update.call(null, {
-    				path: `/chat/${/*item*/ ctx[10].id}`,
+    				path: `/chat/${/*item*/ ctx[12].id}`,
     				className: "bg-gradient-to-r from-blue-600 to-blue-300 text-white",
     				inactiveClassName: ""
     			});
@@ -2491,7 +2579,7 @@ var app = (function () {
     		block,
     		id: create_each_block$3.name,
     		type: "each",
-    		source: "(37:4) {#each data as item}",
+    		source: "(38:4) {#each data as item}",
     		ctx
     	});
 
@@ -2505,8 +2593,14 @@ var app = (function () {
     	let div;
     	let t1;
     	let infinitescroll;
+    	let nav_resize_listener;
     	let current;
-    	searchbar = new SearchBar({ $$inline: true });
+
+    	searchbar = new SearchBar({
+    			props: { width: /*sidebar*/ ctx[5] },
+    			$$inline: true
+    		});
+
     	let each_value = /*data*/ ctx[1];
     	validate_each_argument(each_value);
     	let each_blocks = [];
@@ -2524,7 +2618,7 @@ var app = (function () {
     			$$inline: true
     		});
 
-    	infinitescroll.$on("loadMore", /*loadMore_handler*/ ctx[8]);
+    	infinitescroll.$on("loadMore", /*loadMore_handler*/ ctx[9]);
 
     	const block = {
     		c: function create() {
@@ -2539,9 +2633,11 @@ var app = (function () {
 
     			t1 = space();
     			create_component(infinitescroll.$$.fragment);
-    			add_location(div, file$g, 35, 2, 950);
-    			attr_dev(nav, "class", "p-9 svelte-logz9g");
-    			add_location(nav, file$g, 33, 0, 912);
+    			attr_dev(div, "class", "p-9 mt-5");
+    			add_location(div, file$g, 36, 2, 997);
+    			attr_dev(nav, "class", "svelte-logz9g");
+    			add_render_callback(() => /*nav_elementresize_handler*/ ctx[10].call(nav));
+    			add_location(nav, file$g, 34, 0, 928);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -2556,12 +2652,17 @@ var app = (function () {
     				each_blocks[i].m(div, null);
     			}
 
-    			/*div_binding*/ ctx[7](div);
+    			/*div_binding*/ ctx[8](div);
     			append_dev(nav, t1);
     			mount_component(infinitescroll, nav, null);
+    			nav_resize_listener = add_resize_listener(nav, /*nav_elementresize_handler*/ ctx[10].bind(nav));
     			current = true;
     		},
     		p: function update(ctx, [dirty]) {
+    			const searchbar_changes = {};
+    			if (dirty & /*sidebar*/ 32) searchbar_changes.width = /*sidebar*/ ctx[5];
+    			searchbar.$set(searchbar_changes);
+
     			if (dirty & /*data, selected, push*/ 10) {
     				each_value = /*data*/ ctx[1];
     				validate_each_argument(each_value);
@@ -2606,8 +2707,9 @@ var app = (function () {
     			if (detaching) detach_dev(nav);
     			destroy_component(searchbar);
     			destroy_each(each_blocks, detaching);
-    			/*div_binding*/ ctx[7](null);
+    			/*div_binding*/ ctx[8](null);
     			destroy_component(infinitescroll);
+    			nav_resize_listener();
     		}
     	};
 
@@ -2652,6 +2754,7 @@ var app = (function () {
 
     	let selected;
     	let chatList;
+    	let sidebar;
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
@@ -2675,6 +2778,11 @@ var app = (function () {
     		fetchData();
     	};
 
+    	function nav_elementresize_handler() {
+    		sidebar = this.clientWidth;
+    		$$invalidate(5, sidebar);
+    	}
+
     	$$self.$capture_state = () => ({
     		onMount,
     		active,
@@ -2689,7 +2797,8 @@ var app = (function () {
     		newBatch,
     		fetchData,
     		selected,
-    		chatList
+    		chatList,
+    		sidebar
     	});
 
     	$$self.$inject_state = $$props => {
@@ -2699,6 +2808,7 @@ var app = (function () {
     		if ("newBatch" in $$props) $$invalidate(2, newBatch = $$props.newBatch);
     		if ("selected" in $$props) $$invalidate(3, selected = $$props.selected);
     		if ("chatList" in $$props) $$invalidate(4, chatList = $$props.chatList);
+    		if ("sidebar" in $$props) $$invalidate(5, sidebar = $$props.sidebar);
     	};
 
     	if ($$props && "$$inject" in $$props) {
@@ -2711,10 +2821,12 @@ var app = (function () {
     		newBatch,
     		selected,
     		chatList,
+    		sidebar,
     		fetchData,
     		click_handler,
     		div_binding,
-    		loadMore_handler
+    		loadMore_handler,
+    		nav_elementresize_handler
     	];
     }
 
@@ -5481,7 +5593,7 @@ var app = (function () {
     	return child_ctx;
     }
 
-    // (22:2) {#each links as { path, icon, name }}
+    // (28:2) {#each links as { path, icon, name }}
     function create_each_block(ctx) {
     	let button;
     	let switch_instance;
@@ -5512,7 +5624,7 @@ var app = (function () {
     			if (switch_instance) create_component(switch_instance.$$.fragment);
     			t = space();
     			attr_dev(button, "class", "cursor-pointer m-auto w-10 h-10 my-2 rounded-full p-2 fill-current text-gray-400 bg-gray-100 hover:bg-gray-300  focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-opacity-50");
-    			add_location(button, file$4, 22, 4, 821);
+    			add_location(button, file$4, 28, 4, 1030);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, button, anchor);
@@ -5525,7 +5637,15 @@ var app = (function () {
     			current = true;
 
     			if (!mounted) {
-    				dispose = listen_dev(button, "click", click_handler_1, false, false, false);
+    				dispose = [
+    					listen_dev(button, "click", click_handler_1, false, false, false),
+    					action_destroyer(active.call(null, button, {
+    						path: /*path*/ ctx[5],
+    						className: "bg-gradient-to-r from-blue-600 to-blue-300 text-gray-100",
+    						inactiveClassName: ""
+    					}))
+    				];
+
     				mounted = true;
     			}
     		},
@@ -5567,7 +5687,7 @@ var app = (function () {
     			if (detaching) detach_dev(button);
     			if (switch_instance) destroy_component(switch_instance);
     			mounted = false;
-    			dispose();
+    			run_all(dispose);
     		}
     	};
 
@@ -5575,7 +5695,7 @@ var app = (function () {
     		block,
     		id: create_each_block.name,
     		type: "each",
-    		source: "(22:2) {#each links as { path, icon, name }}",
+    		source: "(28:2) {#each links as { path, icon, name }}",
     		ctx
     	});
 
@@ -5627,9 +5747,9 @@ var app = (function () {
     			}
 
     			attr_dev(button, "class", "cursor-pointer m-auto  my-2 rounded-full p-2 fill-current text-gray-400 bg-gray-100 hover:bg-gray-300 w-10 h-10 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-opacity-50");
-    			add_location(button, file$4, 15, 2, 446);
+    			add_location(button, file$4, 16, 2, 496);
     			attr_dev(main, "class", "flex flex-col");
-    			add_location(main, file$4, 14, 0, 414);
+    			add_location(main, file$4, 15, 0, 464);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -5651,7 +5771,15 @@ var app = (function () {
     			current = true;
 
     			if (!mounted) {
-    				dispose = listen_dev(button, "click", /*click_handler*/ ctx[2], false, false, false);
+    				dispose = [
+    					listen_dev(button, "click", /*click_handler*/ ctx[2], false, false, false),
+    					action_destroyer(active.call(null, button, {
+    						path: "/chat/*",
+    						className: "bg-gradient-to-r from-blue-600 to-blue-300 text-gray-100",
+    						inactiveClassName: ""
+    					}))
+    				];
+
     				mounted = true;
     			}
     		},
@@ -5678,7 +5806,7 @@ var app = (function () {
     				}
     			}
 
-    			if (dirty & /*push, links*/ 2) {
+    			if (dirty & /*links, push*/ 2) {
     				each_value = /*links*/ ctx[1];
     				validate_each_argument(each_value);
     				let i;
@@ -5731,7 +5859,7 @@ var app = (function () {
     			if (switch_instance) destroy_component(switch_instance);
     			destroy_each(each_blocks, detaching);
     			mounted = false;
-    			dispose();
+    			run_all(dispose);
     		}
     	};
 
@@ -5777,6 +5905,7 @@ var app = (function () {
     		lastChatURL,
     		ChatIcon,
     		ImportIcon,
+    		active,
     		currentHome,
     		unsubscribe,
     		links

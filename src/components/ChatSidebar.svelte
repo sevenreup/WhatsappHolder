@@ -29,11 +29,12 @@
 
   let selected;
   let chatList;
+  let sidebar;
 </script>
 
-<nav class="p-9">
-  <SearchBar />
-  <div bind:this={chatList}>
+<nav bind:clientWidth={sidebar}>
+  <SearchBar width={sidebar} />
+  <div class="p-9 mt-5" bind:this={chatList}>
     {#each data as item}
       <div
         class="cursor-pointer rounded-3xl p-2 my-2 chat flex"
