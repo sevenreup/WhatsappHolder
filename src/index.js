@@ -11,6 +11,11 @@ if (require('electron-squirrel-startup')) { // eslint-disable-line global-requir
   app.quit();
 }
 
+const PORT = 8069;
+const express = require('./electron/server').app.listen(PORT, () => {
+  console.log('hell');
+})
+
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
