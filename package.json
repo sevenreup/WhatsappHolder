@@ -12,7 +12,8 @@
     "lint": "echo \"No linting configured\"",
     "svelte-build": "rollup -c",
     "svelte-dev": "rollup -c -w",
-    "svelte-start": "sirv public"
+    "svelte-start": "sirv public",
+    "express": "nodemon dev/express.js"
   },
   "keywords": [],
   "author": {
@@ -49,15 +50,18 @@
   },
   "dependencies": {
     "axios": "^0.21.1",
+    "cors": "^2.8.5",
     "electron-reload": "^1.5.0",
     "electron-squirrel-startup": "^1.0.0",
     "express": "^4.17.1",
+    "multer": "^1.4.2",
     "pouchdb": "^7.2.2",
     "pouchdb-browser": "^7.2.2",
     "sirv-cli": "^1.0.0",
     "smelte": "^1.1.5",
     "svelte-file-dropzone": "^0.0.15",
     "svelte-spa-router": "^3.1.0",
+    "unzipper": "^0.10.11",
     "whatsapp-chat-parser": "^3.1.0"
   },
   "devDependencies": {
@@ -71,6 +75,7 @@
     "autoprefixer": "^10.2.5",
     "concurrently": "^6.0.0",
     "electron": "12.0.0",
+    "nodemon": "^2.0.7",
     "postcss": "^8.2.8",
     "postcss-load-config": "^3.0.1",
     "rollup": "^2.3.4",
