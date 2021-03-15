@@ -12,7 +12,7 @@ if (require('electron-squirrel-startup')) { // eslint-disable-line global-requir
 }
 
 const PORT = 8069;
-const express = require('./electron/server').app.listen(PORT, () => {
+const express = require('./electron/server').http.listen(PORT, () => {
   console.log('hell');
 })
 

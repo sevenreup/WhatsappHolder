@@ -1,6 +1,27 @@
 const express = require('express');
 const cors = require('cors')
 const multer = require('multer')
+
+var app = express();
+const http = require('http').Server(app)
+app.use(cors())
+
+const io = require('socket.io')(http, {
+    cors: {
+        origin: "http://localhost:5000",
+        methods: ["GET", "POST"]
+    }
+})
+
+io.on('connection', (socket) => {
+    console.log('A user connected');
+
+    //Whenever someone disconnects this piece of code executed
+    socket.on('disconnect', function () {
+        console.log('A user disconnected');
+    });
+})
+
 const {
     handleFile
 } = require('./whatsapp/filehandler')
@@ -14,8 +35,7 @@ var storage = multer.diskStorage({
     }
 })
 
-var app = express();
-app.use(cors())
+
 
 var upload = multer({
     storage: storage
@@ -24,7 +44,7 @@ var upload = multer({
 app.post('/upload/files', upload.array('files'), (req, res) => {
     console.log(req.files);
     for (let file of req.files) {
-        handleFile(file)
+        handleFile(file, io)
     }
 
     res.send({
@@ -34,5 +54,5 @@ app.post('/upload/files', upload.array('files'), (req, res) => {
 })
 
 module.exports = {
-    app
+    http
 }

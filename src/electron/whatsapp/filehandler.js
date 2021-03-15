@@ -5,7 +5,7 @@ const {
     parseString
 } = require('whatsapp-chat-parser')
 
-const handleFile = async (upload) => {
+const handleFile = async (upload, socket) => {
     const file = path.join(upload.path, '')
     console.log(file);
     try {

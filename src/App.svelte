@@ -6,6 +6,7 @@
   import ImportChat from "./pages/ImportChat.svelte";
   import EmptyState from "./pages/EmptyState.svelte";
   import Tailwind from "./components/Tailwind.svelte";
+  import Socket from "./components/Socket.svelte";
   let routes = {
     "/": Home,
     "/chat": Home,
@@ -20,7 +21,7 @@
 </script>
 
 <Tailwind />
-
+<Socket />
 <main class="main-grid">
   <nav class="toolbar">
     <AppBar />
