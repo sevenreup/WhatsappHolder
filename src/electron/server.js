@@ -42,11 +42,13 @@ var upload = multer({
 })
 
 app.post('/upload/files', upload.array('files'), (req, res) => {
-    console.log(req.files);
+    io.sockets.emit('file-upload', {
+        status: 'processing',
+        files: req.files
+    })
     for (let file of req.files) {
         handleFile(file, io)
     }
-
     res.send({
         status: 'done',
         files: req.files

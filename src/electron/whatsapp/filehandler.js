@@ -5,12 +5,15 @@ const {
     parseString
 } = require('whatsapp-chat-parser')
 
-const handleFile = async (upload, socket) => {
+const handleFile = async (upload, io) => {
     const file = path.join(upload.path, '')
     console.log(file);
     try {
         if (/^application\/(?:x-)?zip(?:-compressed)?$/.test(upload.mimetype)) {
             const zipPath = `./srv/unzips/${Date.now()}`
+            io.sockets.emit('file-upload', {
+                status: 'unziping'
+            })
             fs.createReadStream(file)
                 .pipe(unzipper.Parse()).on("entry", (entry) => {
                     const fileName = entry.path;
@@ -26,10 +29,13 @@ const handleFile = async (upload, socket) => {
                     });
                     if (ext === 'txt') {
                         const content = entry.buffer().then(res => {
-                            txtHandle(res.toString(), true)
+                            txtHandle(res.toString(), true, io)
                             entry.autodrain();
                         }).catch(err => {
-                            console.log(err);
+                            io.sockets.emit('file-upload', {
+                                status: 'error',
+                                err
+                            })
                             entry.autodrain();
                         });
 
@@ -41,10 +47,13 @@ const handleFile = async (upload, socket) => {
 
         } else {
             const data = fs.readFileSync(file)
-            txtHandle(data.toString(), false)
+            txtHandle(data.toString(), false, io)
         }
     } catch (error) {
-
+        io.sockets.emit('file-upload', {
+            status: 'error',
+            error
+        })
         console.log(error);
     }
 
@@ -55,13 +64,23 @@ const zipHandle = (zipPath) => {
 
 }
 
-const txtHandle = async (e, parseAttachments) => {
+const txtHandle = async (e, parseAttachments, io) => {
     try {
+        io.sockets.emit('file-upload', {
+            status: 'parsing messages'
+        })
         const messages = await parseString(e, {
             parseAttachments
         })
+        io.sockets.emit('file-upload', {
+            status: 'message parsing complete'
+        })
         console.log(messages);
     } catch (error) {
+        io.sockets.emit('file-upload', {
+            status: 'error',
+            error
+        })
         console.log(error);
     }
 }
