@@ -14581,7 +14581,7 @@ var app = (function () {
     	return child_ctx;
     }
 
-    // (110:8) {:else}
+    // (109:8) {:else}
     function create_else_block_1(ctx) {
     	let importcompletecard;
     	let current;
@@ -14618,20 +14618,24 @@ var app = (function () {
     		block,
     		id: create_else_block_1.name,
     		type: "else",
-    		source: "(110:8) {:else}",
+    		source: "(109:8) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (89:28) 
+    // (84:28) 
     function create_if_block_1(ctx) {
     	let div0;
     	let t0;
+    	let progressbar;
+    	let t1;
     	let div1;
     	let button;
     	let current;
+    	let mounted;
+    	let dispose;
     	let each_value = /*files*/ ctx[0].accepted;
     	validate_each_argument(each_value);
     	let each_blocks = [];
@@ -14644,6 +14648,15 @@ var app = (function () {
     		each_blocks[i] = null;
     	});
 
+    	progressbar = new ProgressBar({
+    			props: {
+    				set: /*uploadStats*/ ctx[1].percentage,
+    				undetermined: true,
+    				title: /*uploadStats*/ ctx[1].title
+    			},
+    			$$inline: true
+    		});
+
     	const block = {
     		c: function create() {
     			div0 = element("div");
@@ -14653,15 +14666,16 @@ var app = (function () {
     			}
 
     			t0 = space();
+    			create_component(progressbar.$$.fragment);
+    			t1 = space();
     			div1 = element("div");
     			button = element("button");
-    			button.textContent = "Upload";
+    			button.textContent = "upload";
     			attr_dev(div0, "class", "flex");
-    			add_location(div0, file$2, 89, 10, 2730);
-    			attr_dev(button, "class", "w-full");
-    			add_location(button, file$2, 107, 12, 3400);
-    			attr_dev(div1, "class", "mt-4");
-    			add_location(div1, file$2, 106, 10, 3368);
+    			add_location(div0, file$2, 84, 10, 2532);
+    			attr_dev(button, "class", "w-full p-2 rounded-lg bg-blue-800 text-white");
+    			add_location(button, file$2, 102, 12, 3169);
+    			add_location(div1, file$2, 101, 10, 3150);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div0, anchor);
@@ -14671,12 +14685,19 @@ var app = (function () {
     			}
 
     			insert_dev(target, t0, anchor);
+    			mount_component(progressbar, target, anchor);
+    			insert_dev(target, t1, anchor);
     			insert_dev(target, div1, anchor);
     			append_dev(div1, button);
     			current = true;
+
+    			if (!mounted) {
+    				dispose = listen_dev(button, "click", /*upload*/ ctx[5], false, false, false);
+    				mounted = true;
+    			}
     		},
     		p: function update(ctx, dirty) {
-    			if (dirty & /*uploadStats, files*/ 3) {
+    			if (dirty & /*files*/ 1) {
     				each_value = /*files*/ ctx[0].accepted;
     				validate_each_argument(each_value);
     				let i;
@@ -14703,6 +14724,11 @@ var app = (function () {
 
     				check_outros();
     			}
+
+    			const progressbar_changes = {};
+    			if (dirty & /*uploadStats*/ 2) progressbar_changes.set = /*uploadStats*/ ctx[1].percentage;
+    			if (dirty & /*uploadStats*/ 2) progressbar_changes.title = /*uploadStats*/ ctx[1].title;
+    			progressbar.$set(progressbar_changes);
     		},
     		i: function intro(local) {
     			if (current) return;
@@ -14711,6 +14737,7 @@ var app = (function () {
     				transition_in(each_blocks[i]);
     			}
 
+    			transition_in(progressbar.$$.fragment, local);
     			current = true;
     		},
     		o: function outro(local) {
@@ -14720,13 +14747,18 @@ var app = (function () {
     				transition_out(each_blocks[i]);
     			}
 
+    			transition_out(progressbar.$$.fragment, local);
     			current = false;
     		},
     		d: function destroy(detaching) {
     			if (detaching) detach_dev(div0);
     			destroy_each(each_blocks, detaching);
     			if (detaching) detach_dev(t0);
+    			destroy_component(progressbar, detaching);
+    			if (detaching) detach_dev(t1);
     			if (detaching) detach_dev(div1);
+    			mounted = false;
+    			dispose();
     		}
     	};
 
@@ -14734,14 +14766,14 @@ var app = (function () {
     		block,
     		id: create_if_block_1.name,
     		type: "if",
-    		source: "(89:28) ",
+    		source: "(84:28) ",
     		ctx
     	});
 
     	return block;
     }
 
-    // (79:8) {#if step == 0}
+    // (74:8) {#if step == 0}
     function create_if_block(ctx) {
     	let dropzone;
     	let current;
@@ -14793,14 +14825,14 @@ var app = (function () {
     		block,
     		id: create_if_block.name,
     		type: "if",
-    		source: "(79:8) {#if step == 0}",
+    		source: "(74:8) {#if step == 0}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (95:16) {:else}
+    // (90:16) {:else}
     function create_else_block(ctx) {
     	let chaticon;
     	let current;
@@ -14836,14 +14868,14 @@ var app = (function () {
     		block,
     		id: create_else_block.name,
     		type: "else",
-    		source: "(95:16) {:else}",
+    		source: "(90:16) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (93:16) {#if file.type == "text/plain"}
+    // (88:16) {#if file.type == "text/plain"}
     function create_if_block_2(ctx) {
     	let importicon;
     	let current;
@@ -14879,14 +14911,14 @@ var app = (function () {
     		block,
     		id: create_if_block_2.name,
     		type: "if",
-    		source: "(93:16) {#if file.type == \\\"text/plain\\\"}",
+    		source: "(88:16) {#if file.type == \\\"text/plain\\\"}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (91:12) {#each files.accepted as file}
+    // (86:12) {#each files.accepted as file}
     function create_each_block(ctx) {
     	let div;
     	let current_block_type_index;
@@ -14897,7 +14929,6 @@ var app = (function () {
     	let t1_value = /*file*/ ctx[6].name + "";
     	let t1;
     	let t2;
-    	let progressbar;
     	let current;
     	const if_block_creators = [create_if_block_2, create_else_block];
     	const if_blocks = [];
@@ -14910,15 +14941,6 @@ var app = (function () {
     	current_block_type_index = select_block_type_1(ctx);
     	if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
 
-    	progressbar = new ProgressBar({
-    			props: {
-    				set: /*uploadStats*/ ctx[1].percentage,
-    				undetermined: true,
-    				title: /*uploadStats*/ ctx[1].title
-    			},
-    			$$inline: true
-    		});
-
     	const block = {
     		c: function create() {
     			div = element("div");
@@ -14928,12 +14950,11 @@ var app = (function () {
     			span = element("span");
     			t1 = text(t1_value);
     			t2 = space();
-    			create_component(progressbar.$$.fragment);
-    			add_location(span, file$2, 97, 32, 3095);
+    			add_location(span, file$2, 92, 32, 2897);
     			attr_dev(p, "class", "ml-2");
-    			add_location(p, file$2, 97, 16, 3079);
+    			add_location(p, file$2, 92, 16, 2881);
     			attr_dev(div, "class", "flex p-4 bg-gray-100 m-2 rounded-3xl");
-    			add_location(div, file$2, 91, 14, 2808);
+    			add_location(div, file$2, 86, 14, 2610);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -14942,8 +14963,7 @@ var app = (function () {
     			append_dev(div, p);
     			append_dev(p, span);
     			append_dev(span, t1);
-    			insert_dev(target, t2, anchor);
-    			mount_component(progressbar, target, anchor);
+    			append_dev(div, t2);
     			current = true;
     		},
     		p: function update(ctx, dirty) {
@@ -14970,27 +14990,19 @@ var app = (function () {
     			}
 
     			if ((!current || dirty & /*files*/ 1) && t1_value !== (t1_value = /*file*/ ctx[6].name + "")) set_data_dev(t1, t1_value);
-    			const progressbar_changes = {};
-    			if (dirty & /*uploadStats*/ 2) progressbar_changes.set = /*uploadStats*/ ctx[1].percentage;
-    			if (dirty & /*uploadStats*/ 2) progressbar_changes.title = /*uploadStats*/ ctx[1].title;
-    			progressbar.$set(progressbar_changes);
     		},
     		i: function intro(local) {
     			if (current) return;
     			transition_in(if_block);
-    			transition_in(progressbar.$$.fragment, local);
     			current = true;
     		},
     		o: function outro(local) {
     			transition_out(if_block);
-    			transition_out(progressbar.$$.fragment, local);
     			current = false;
     		},
     		d: function destroy(detaching) {
     			if (detaching) detach_dev(div);
     			if_blocks[current_block_type_index].d();
-    			if (detaching) detach_dev(t2);
-    			destroy_component(progressbar, detaching);
     		}
     	};
 
@@ -14998,14 +15010,14 @@ var app = (function () {
     		block,
     		id: create_each_block.name,
     		type: "each",
-    		source: "(91:12) {#each files.accepted as file}",
+    		source: "(86:12) {#each files.accepted as file}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (80:10) <Dropzone              containerClasses="drop-zone"              on:drop={handleFilesSelect}              accept={["text/plain", "application/zip", ".zip"]}            >
+    // (75:10) <Dropzone              containerClasses="drop-zone"              on:drop={handleFilesSelect}              accept={["text/plain", "application/zip", ".zip"]}            >
     function create_default_slot(ctx) {
     	let p;
     	let t0;
@@ -15018,9 +15030,9 @@ var app = (function () {
     			t0 = text("Drag & Drop files here to upload ");
     			br = element("br");
     			t1 = text(" Browse");
-    			add_location(br, file$2, 85, 47, 2634);
+    			add_location(br, file$2, 80, 47, 2436);
     			attr_dev(p, "class", "border-2 border-dashed p-6");
-    			add_location(p, file$2, 84, 12, 2547);
+    			add_location(p, file$2, 79, 12, 2349);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, p, anchor);
@@ -15037,7 +15049,7 @@ var app = (function () {
     		block,
     		id: create_default_slot.name,
     		type: "slot",
-    		source: "(80:10) <Dropzone              containerClasses=\\\"drop-zone\\\"              on:drop={handleFilesSelect}              accept={[\\\"text/plain\\\", \\\"application/zip\\\", \\\".zip\\\"]}            >",
+    		source: "(75:10) <Dropzone              containerClasses=\\\"drop-zone\\\"              on:drop={handleFilesSelect}              accept={[\\\"text/plain\\\", \\\"application/zip\\\", \\\".zip\\\"]}            >",
     		ctx
     	});
 
@@ -15056,11 +15068,7 @@ var app = (function () {
     	let div1;
     	let current_block_type_index;
     	let if_block;
-    	let t4;
-    	let button;
     	let current;
-    	let mounted;
-    	let dispose;
     	const if_block_creators = [create_if_block, create_if_block_1, create_else_block_1];
     	const if_blocks = [];
 
@@ -15087,20 +15095,16 @@ var app = (function () {
     			div2 = element("div");
     			div1 = element("div");
     			if_block.c();
-    			t4 = space();
-    			button = element("button");
-    			button.textContent = "upload";
-    			add_location(h1, file$2, 72, 6, 2095);
-    			add_location(p, file$2, 73, 6, 2135);
-    			add_location(div0, file$2, 71, 4, 2082);
+    			add_location(h1, file$2, 67, 6, 1897);
+    			add_location(p, file$2, 68, 6, 1937);
+    			add_location(div0, file$2, 66, 4, 1884);
     			attr_dev(div1, "class", "p-5 bg-white rounded-lg shadow-lg");
-    			add_location(div1, file$2, 77, 6, 2280);
+    			add_location(div1, file$2, 72, 6, 2082);
     			attr_dev(div2, "class", "w-8/12 relative m-auto top-16");
-    			add_location(div2, file$2, 76, 4, 2229);
+    			add_location(div2, file$2, 71, 4, 2031);
     			attr_dev(div3, "class", "text-center container p-8 bg-blue-100 m-auto rounded-3xl");
-    			add_location(div3, file$2, 70, 2, 2006);
-    			add_location(button, file$2, 115, 2, 3570);
-    			add_location(main, file$2, 69, 0, 1996);
+    			add_location(div3, file$2, 65, 2, 1808);
+    			add_location(main, file$2, 64, 0, 1798);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -15116,17 +15120,34 @@ var app = (function () {
     			append_dev(div3, div2);
     			append_dev(div2, div1);
     			if_blocks[current_block_type_index].m(div1, null);
-    			append_dev(main, t4);
-    			append_dev(main, button);
     			current = true;
-
-    			if (!mounted) {
-    				dispose = listen_dev(button, "click", /*upload*/ ctx[5], false, false, false);
-    				mounted = true;
-    			}
     		},
     		p: function update(ctx, [dirty]) {
-    			if_block.p(ctx, dirty);
+    			let previous_block_index = current_block_type_index;
+    			current_block_type_index = select_block_type(ctx);
+
+    			if (current_block_type_index === previous_block_index) {
+    				if_blocks[current_block_type_index].p(ctx, dirty);
+    			} else {
+    				group_outros();
+
+    				transition_out(if_blocks[previous_block_index], 1, 1, () => {
+    					if_blocks[previous_block_index] = null;
+    				});
+
+    				check_outros();
+    				if_block = if_blocks[current_block_type_index];
+
+    				if (!if_block) {
+    					if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
+    					if_block.c();
+    				} else {
+    					if_block.p(ctx, dirty);
+    				}
+
+    				transition_in(if_block, 1);
+    				if_block.m(div1, null);
+    			}
     		},
     		i: function intro(local) {
     			if (current) return;
@@ -15140,8 +15161,6 @@ var app = (function () {
     		d: function destroy(detaching) {
     			if (detaching) detach_dev(main);
     			if_blocks[current_block_type_index].d();
-    			mounted = false;
-    			dispose();
     		}
     	};
 
@@ -15157,22 +15176,10 @@ var app = (function () {
     }
 
     function instance$4($$self, $$props, $$invalidate) {
+    	let step;
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots("ImportChat", slots, []);
-
-    	let files = {
-    		accepted: [
-    			{
-    				type: "application/x-zip-compressed",
-    				name: "whatsapp-chat-parser-example.5e7bb875.zip"
-    			},
-    			{
-    				name: "OPEN_SOURCE_SOFTWARE_NOTICE.txt",
-    				type: "text/plain"
-    			}
-    		],
-    		rejected: []
-    	};
+    	let files = { accepted: [], rejected: [] };
 
     	let uploadStats = {
     		uploading: false,
@@ -15180,7 +15187,6 @@ var app = (function () {
     		title: "Uploading files."
     	};
 
-    	let step = 2;
     	let users = [{ name: "s" }, { name: "ss" }, { name: "sd" }, { name: "sg" }];
 
     	uploadProgress.subscribe(value => {
@@ -15195,7 +15201,8 @@ var app = (function () {
     		const { acceptedFiles, fileRejections } = e.detail;
     		$$invalidate(0, files.accepted = [...files.accepted, ...acceptedFiles], files);
     		$$invalidate(0, files.rejected = [...files.rejected, ...fileRejections], files);
-    		console.log(acceptedFiles);
+    		console.log(files);
+    		$$invalidate(2, step = 1);
     	}
 
     	function upload() {
@@ -15240,23 +15247,24 @@ var app = (function () {
     		ImportCompleteCard,
     		files,
     		uploadStats,
-    		step,
     		users,
     		handleFilesSelect,
-    		upload
+    		upload,
+    		step
     	});
 
     	$$self.$inject_state = $$props => {
     		if ("files" in $$props) $$invalidate(0, files = $$props.files);
     		if ("uploadStats" in $$props) $$invalidate(1, uploadStats = $$props.uploadStats);
-    		if ("step" in $$props) $$invalidate(2, step = $$props.step);
     		if ("users" in $$props) $$invalidate(3, users = $$props.users);
+    		if ("step" in $$props) $$invalidate(2, step = $$props.step);
     	};
 
     	if ($$props && "$$inject" in $$props) {
     		$$self.$inject_state($$props.$$inject);
     	}
 
+    	$$invalidate(2, step = 0);
     	return [files, uploadStats, step, users, handleFilesSelect, upload];
     }
 

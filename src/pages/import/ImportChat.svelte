@@ -1,20 +1,12 @@
 <script>
-  import api from "../api";
+  import api from "../../../api";
   import Dropzone from "svelte-file-dropzone";
-  import ProgressBar from "../components/widgets/ProgressBar.svelte";
-  import { uploadProgress } from "../store/socket-store";
-  import ImportIcon from "../components/icons/ImportIcon.svelte";
-  import ChatIcon from "../components/icons/ChatIcon.svelte";
-  import ImportCompleteCard from "../components/import/ImportCompleteCard.svelte";
+  import { uploadProgress } from "../../../store/socket-store";
+  import ImportCompleteCard from "./ImportCompleteCard.svelte";
+  import ImportFileOptionsCard from "./ImportFileOptionsCard.svelte";
 
   let files = {
-    accepted: [
-      {
-        type: "application/x-zip-compressed",
-        name: "whatsapp-chat-parser-example.5e7bb875.zip",
-      },
-      { name: "OPEN_SOURCE_SOFTWARE_NOTICE.txt", type: "text/plain" },
-    ],
+    accepted: [],
     rejected: [],
   };
   let uploadStats = {
@@ -22,7 +14,7 @@
     percentage: 0,
     title: "Uploading files.",
   };
-  let step = 2;
+  $: step = 0;
   let users = [{ name: "s" }, { name: "ss" }, { name: "sd" }, { name: "sg" }];
   uploadProgress.subscribe((value) => {
     if (value) {
@@ -34,7 +26,8 @@
     const { acceptedFiles, fileRejections } = e.detail;
     files.accepted = [...files.accepted, ...acceptedFiles];
     files.rejected = [...files.rejected, ...fileRejections];
-    console.log(acceptedFiles);
+    console.log(files);
+    step = 1;
   }
 
   function upload() {
@@ -87,46 +80,26 @@
             </p>
           </Dropzone>
         {:else if step == 1}
-          <div class="flex">
-            {#each files.accepted as file}
-              <div class="flex p-4 bg-gray-100 m-2 rounded-3xl">
-                {#if file.type == "text/plain"}
-                  <ImportIcon classList="h-8 w-8" />
-                {:else}
-                  <ChatIcon classList="h-8 w-8" />
-                {/if}
-                <p class="ml-2"><span>{file.name}</span></p>
-              </div>
-              <ProgressBar
-                set={uploadStats.percentage}
-                undetermined={true}
-                title={uploadStats.title}
-              />
-            {/each}
-          </div>
-          <div class="mt-4">
-            <button class="w-full">Upload</button>
-          </div>
+          <ImportFileOptionsCard
+            files={files.accepted}
+            percentage={uploadStats.percentage}
+            title={uploadStats.title}
+            {upload}
+          />
         {:else}
           <ImportCompleteCard {users} />
         {/if}
       </div>
     </div>
   </div>
-  <button on:click={upload}>upload</button>
 </main>
 
 <style>
   :global(.drop-zone) {
-    background-color: white !important;
-    padding: 20px;
+    background-color: transparent !important;
+    padding: 0px;
     display: block !important;
     border-style: none !important;
-    border-radius: 20px !important;
     cursor: pointer;
-    --tw-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-      0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000),
-      var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
   }
 </style>

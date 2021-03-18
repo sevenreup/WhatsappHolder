@@ -3,7 +3,7 @@
   import Router, { replace } from "svelte-spa-router";
   import MainSidebar from "./components/MainSidebar.svelte";
   import AppBar from "./components/AppBar.svelte";
-  import ImportChat from "./pages/ImportChat.svelte";
+  import ImportChat from "./pages/import/ImportChat.svelte";
   import EmptyState from "./pages/EmptyState.svelte";
   import Tailwind from "./components/Tailwind.svelte";
   import Socket from "./components/Socket.svelte";

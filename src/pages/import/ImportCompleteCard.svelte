@@ -1,5 +1,5 @@
 <script>
-  import UserSelect from "../widgets/UserSelect.svelte";
+  import UserSelect from "../../components/widgets/UserSelect.svelte";
 
   let users = Array(20)
     .fill()
