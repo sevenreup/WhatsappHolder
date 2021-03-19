@@ -1,7 +1,7 @@
 <script>
-  import api from "../../../api";
+  import api from "../../api";
   import Dropzone from "svelte-file-dropzone";
-  import { uploadProgress } from "../../../store/socket-store";
+  import { uploadProgress, sendImportDetails } from "../../store/socket-store";
   import ImportCompleteCard from "./ImportCompleteCard.svelte";
   import ImportFileOptionsCard from "./ImportFileOptionsCard.svelte";
 
@@ -15,10 +15,16 @@
     title: "Uploading files.",
   };
   $: step = 0;
-  let users = [{ name: "s" }, { name: "ss" }, { name: "sd" }, { name: "sg" }];
+  let users = [];
+
   uploadProgress.subscribe((value) => {
     if (value) {
       uploadStats.title = value.status;
+      if (value.status === "finished") {
+        users = value.names;
+        step = 2;
+        uploadStats.id = value.id;
+      }
     }
     console.log(value);
   });
@@ -58,6 +64,12 @@
         console.log(err);
       });
   }
+
+  function finishImport({ detail }) {
+    const data = { ...detail, id: uploadStats.id };
+    console.log(data);
+    sendImportDetails(data)
+  }
 </script>
 
 <main>
@@ -87,7 +99,7 @@
             {upload}
           />
         {:else}
-          <ImportCompleteCard {users} />
+          <ImportCompleteCard {users} on:completed={finishImport} />
         {/if}
       </div>
     </div>

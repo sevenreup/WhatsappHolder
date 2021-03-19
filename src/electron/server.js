@@ -1,10 +1,24 @@
+const path = require('path')
 const express = require('express');
 const cors = require('cors')
 const multer = require('multer')
+var PouchDB = require('pouchdb');
+PouchDB.plugin(require('pouchdb-find'));
+
+require('./db/db')
+
+const dbPath = /** path.join(electronApp.getPath('userData'), 'Cache'); **/ './srv/db';
 
 var app = express();
 const http = require('http').Server(app)
 app.use(cors())
+
+const pouch = require('express-pouchdb')({
+    mode: 'fullCouchDB',
+    overrideMode: {
+        include: ['routes/fauxton']
+    }
+})
 
 const io = require('socket.io')(http, {
     cors: {
@@ -14,17 +28,15 @@ const io = require('socket.io')(http, {
 })
 
 io.on('connection', (socket) => {
-    console.log('A user connected');
-
-    //Whenever someone disconnects this piece of code executed
-    socket.on('disconnect', function () {
-        console.log('A user disconnected');
-    });
+    initSockets(socket)
 })
 
 const {
     handleFile
-} = require('./whatsapp/filehandler')
+} = require('./whatsapp/filehandler');
+const {
+    initSockets
+} = require('./whatsapp/socketImports');
 
 var storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -34,8 +46,6 @@ var storage = multer.diskStorage({
         cb(null, file.originalname)
     }
 })
-
-
 
 var upload = multer({
     storage: storage
@@ -55,6 +65,10 @@ app.post('/upload/files', upload.array('files'), (req, res) => {
     })
 })
 
+pouch.setPouchDB(require('pouchdb').defaults({
+    prefix: path.join(dbPath, 'db/')
+}));
+
 module.exports = {
-    http
+    http,
 }

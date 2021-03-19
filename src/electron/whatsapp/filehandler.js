@@ -4,46 +4,57 @@ const unzipper = require('unzipper');
 const {
     parseString
 } = require('whatsapp-chat-parser')
+const ImportDB = require('../db/ImportDB');
+const { getFileType } = require('../util/fileUtils');
 
 const handleFile = async (upload, io) => {
     const file = path.join(upload.path, '')
-    console.log(file);
     try {
         if (/^application\/(?:x-)?zip(?:-compressed)?$/.test(upload.mimetype)) {
             const zipPath = `./srv/unzips/${Date.now()}`
             io.sockets.emit('file-upload', {
                 status: 'unziping'
             })
-            fs.createReadStream(file)
-                .pipe(unzipper.Parse()).on("entry", (entry) => {
-                    const fileName = entry.path;
-                    const type = entry.type;
-                    const size = entry.vars.uncompressedSize;
-                    const ext = getFileType(fileName)
 
-                    console.log({
-                        fileName,
-                        type,
-                        size,
-                        ext
-                    });
-                    if (ext === 'txt') {
-                        const content = entry.buffer().then(res => {
-                            txtHandle(res.toString(), true, io)
-                            entry.autodrain();
-                        }).catch(err => {
-                            io.sockets.emit('file-upload', {
-                                status: 'error',
-                                err
-                            })
-                            entry.autodrain();
-                        });
+            fs.mkdtemp('./srv/uploads/temp/wap-', (err, folder) => {
+                if (err) throw err
+                fs.createReadStream(file)
+                    .pipe(unzipper.Parse())
+                    .on("entry", (entry) => {
+                        const fileName = entry.path;
+                        const type = entry.type;
+                        const size = entry.vars.uncompressedSize;
+                        const ext = getFileType(fileName)
+
+                        // console.log({
+                        //     fileName,
+                        //     type,
+                        //     size,
+                        //     ext
+                        // });
+
+                        if (ext === 'txt') {
+                            entry.buffer().then(res => {
+                                txtHandle(res.toString(), true, io, {
+                                    tempFolder: folder
+                                })
+                                entry.autodrain();
+                            }).catch(err => {
+                                io.sockets.emit('file-upload', {
+                                    status: 'error',
+                                    err
+                                })
+                                entry.autodrain();
+                            });
 
 
-                    } else {
-                        entry.autodrain();
-                    }
-                })
+                        } else {
+                            entry.pipe(fs.createWriteStream(path.join(folder, fileName))).on('finish', () => console.log('done'))
+                        }
+                    })
+            })
+
+
 
         } else {
             const data = fs.readFileSync(file)
@@ -64,7 +75,7 @@ const zipHandle = (zipPath) => {
 
 }
 
-const txtHandle = async (e, parseAttachments, io) => {
+const txtHandle = async (e, parseAttachments, io, extras = {}) => {
     try {
         io.sockets.emit('file-upload', {
             status: 'parsing messages'
@@ -75,7 +86,16 @@ const txtHandle = async (e, parseAttachments, io) => {
         io.sockets.emit('file-upload', {
             status: 'message parsing complete'
         })
-        console.log(messages);
+        const unique = [...new Set(messages.map(item => item.author))];
+        console.log(unique);
+        const {
+            id
+        } = await ImportDB.addTempData(messages, parseAttachments, unique, extras)
+        io.sockets.emit('file-upload', {
+            status: 'finished',
+            names: unique,
+            id
+        })
     } catch (error) {
         io.sockets.emit('file-upload', {
             status: 'error',
@@ -83,10 +103,6 @@ const txtHandle = async (e, parseAttachments, io) => {
         })
         console.log(error);
     }
-}
-
-const getFileType = (filename) => {
-    return filename.split('.').pop();
 }
 
 module.exports = {

@@ -22,8 +22,12 @@ socket.on('file-upload', (argd) => {
     console.log('started processing the file', argd);
 })
 
+function sendImportDetails(details) {
+    socket.emit('finish-import', details);
+}
 
 export {
     socketID,
-    uploadProgress
+    uploadProgress,
+    sendImportDetails
 }

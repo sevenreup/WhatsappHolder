@@ -1,7 +1,7 @@
 <script>
   import { slide } from "svelte/transition";
   export let items = [];
-  export let key = "name";
+  export let key = null;
   export let selected = null;
   let show = false;
 </script>
@@ -22,7 +22,9 @@
           alt=""
           class="flex-shrink-0 h-6 w-6 rounded-full"
         />
-        <span class="ml-3 block truncate"> {selected[key]} </span>
+        <span class="ml-3 block truncate">
+          {key == null ? selected : selected[key]}
+        </span>
       </span>
     {:else}
       <span class="flex items-center h-6">
@@ -65,7 +67,10 @@
             id="listbox-item-0"
             role="option"
             class="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9"
-            on:click={() => (selected = item)}
+            on:click={() => {
+              selected = item;
+              show = false
+              }}
           >
             <div class="flex items-center">
               <img
@@ -73,7 +78,9 @@
                 alt=""
                 class="flex-shrink-0 h-6 w-6 rounded-full"
               />
-              <span class="ml-3 block font-normal truncate"> {item[key]} </span>
+              <span class="ml-3 block font-normal truncate">
+                {key == null ? item : item[key]}
+              </span>
             </div>
             {#if selected === item}
               <span class="absolute inset-y-0 right-0 flex items-center pr-4">
