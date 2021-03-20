@@ -1,17 +1,18 @@
 const path = require('path')
-const fs = require('fs')
+const fs = require('fs-extra')
 const unzipper = require('unzipper');
 const {
     parseString
 } = require('whatsapp-chat-parser')
 const ImportDB = require('../db/ImportDB');
-const { getFileType } = require('../util/fileUtils');
+const {
+    getFileType
+} = require('../util/fileUtils');
 
 const handleFile = async (upload, io) => {
     const file = path.join(upload.path, '')
     try {
         if (/^application\/(?:x-)?zip(?:-compressed)?$/.test(upload.mimetype)) {
-            const zipPath = `./srv/unzips/${Date.now()}`
             io.sockets.emit('file-upload', {
                 status: 'unziping'
             })
@@ -36,7 +37,8 @@ const handleFile = async (upload, io) => {
                         if (ext === 'txt') {
                             entry.buffer().then(res => {
                                 txtHandle(res.toString(), true, io, {
-                                    tempFolder: folder
+                                    tempFolder: folder,
+                                    processedFile: file
                                 })
                                 entry.autodrain();
                             }).catch(err => {
@@ -58,7 +60,9 @@ const handleFile = async (upload, io) => {
 
         } else {
             const data = fs.readFileSync(file)
-            txtHandle(data.toString(), false, io)
+            txtHandle(data.toString(), false, io, {
+                processedFile: file
+            })
         }
     } catch (error) {
         io.sockets.emit('file-upload', {
@@ -105,6 +109,23 @@ const txtHandle = async (e, parseAttachments, io, extras = {}) => {
     }
 }
 
+const finishImportZip = async (id, folder) => {
+
+    try {
+        const neeFolder = './srv/media/' + id
+        await fs.move(folder, neeFolder)
+        return neeFolder + id
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+const deleteProcessedFile = async (file) => {
+    return await fs.remove(file)
+}
+
 module.exports = {
-    handleFile
+    handleFile,
+    finishImportZip,
+    deleteProcessedFile
 }

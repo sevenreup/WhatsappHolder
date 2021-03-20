@@ -8,6 +8,7 @@ function initSockets(socket) {
     socket.on('finish-import', async (arg) => {
         console.log(arg);
         finishImport(arg).then((res) => {
+            console.log(res);
             socket.emit("import-finished");
         }).catch((err) => {
 

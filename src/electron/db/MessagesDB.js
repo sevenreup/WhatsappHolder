@@ -2,7 +2,7 @@ const {
     messageDB
 } = require("./db");
 
-function saveImportedChats(data) {
+async function saveImportedChats(data) {
     return await messageDB.post(data)
 }
 

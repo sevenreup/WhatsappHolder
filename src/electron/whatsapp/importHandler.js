@@ -3,7 +3,8 @@ const {
     getAllByID
 } = require('../db/ContactsDB');
 const {
-    getTempMessages
+    getTempMessages,
+    deleteTempMessages
 } = require('../db/ImportDB');
 const {
     saveImportedChats
@@ -11,6 +12,10 @@ const {
 const {
     getFileType
 } = require('../util/fileUtils');
+const {
+    finishImportZip,
+    deleteProcessedFile
+} = require('./filehandler')
 
 async function finishImport({
     id,
@@ -38,7 +43,7 @@ async function finishImport({
             if (selectedUser == message.author && useImports == true) {
                 message.isOwner = true
             } else {
-                message.author = hash[message.author]
+                message.author = hash[message.author]._id
             }
             return message
         });
@@ -46,17 +51,28 @@ async function finishImport({
 
         const config = {
             isConfig: true,
-            participants
         }
 
         data.push(config);
 
-        await saveImportedChats({
+        const chat = await saveImportedChats({
             messages: data,
             config,
-            name: 'random'
+            name: 'random',
+            users: hash
         })
 
+        if (isZip) {
+            try {
+                const data = await finishImportZip(chat.id, extra.tempFolder)
+                console.log(data);
+            } catch (error) {
+                console.log(error);
+            }
+        }
+
+        await deleteProcessedFile(extra.processedFile)
+        return await deleteTempMessages(id)
     } catch (error) {
         console.log(error);
     }

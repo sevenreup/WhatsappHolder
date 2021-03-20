@@ -4,6 +4,7 @@
   import { uploadProgress, sendImportDetails } from "../../store/socket-store";
   import ImportCompleteCard from "./ImportCompleteCard.svelte";
   import ImportFileOptionsCard from "./ImportFileOptionsCard.svelte";
+  import { replace } from "svelte-spa-router";
 
   let files = {
     accepted: [],
@@ -24,6 +25,8 @@
         users = value.names;
         step = 2;
         uploadStats.id = value.id;
+      } else if (value.status === "import-compelete") {
+        replace("/");
       }
     }
     console.log(value);
@@ -68,7 +71,7 @@
   function finishImport({ detail }) {
     const data = { ...detail, id: uploadStats.id };
     console.log(data);
-    sendImportDetails(data)
+    sendImportDetails(data);
   }
 </script>
 

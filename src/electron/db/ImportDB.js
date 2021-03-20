@@ -20,7 +20,17 @@ const getTempMessages = async (id) => {
     return await zipperDB.get(id);
 }
 
+const deleteTempMessages = async (id) => {
+    try {
+        const doc = await zipperDB.get(id)
+        return await zipperDB.remove(doc)
+    } catch (error) {
+        console.log(error);
+    }
+}
+
 module.exports = {
     addTempData,
-    getTempMessages
+    getTempMessages,
+    deleteTempMessages
 }

@@ -2,12 +2,23 @@ const path = require('path')
 const express = require('express');
 const cors = require('cors')
 const multer = require('multer')
+const {
+    handleFile
+} = require('./whatsapp/filehandler');
+const {
+    initSockets
+} = require('./whatsapp/socketImports');
+const {
+    createRequiredPaths
+} = require('./util/fileUtils');
 var PouchDB = require('pouchdb');
 PouchDB.plugin(require('pouchdb-find'));
 
 require('./db/db')
 
 const dbPath = /** path.join(electronApp.getPath('userData'), 'Cache'); **/ './srv/db';
+
+createRequiredPaths()
 
 var app = express();
 const http = require('http').Server(app)
@@ -31,16 +42,9 @@ io.on('connection', (socket) => {
     initSockets(socket)
 })
 
-const {
-    handleFile
-} = require('./whatsapp/filehandler');
-const {
-    initSockets
-} = require('./whatsapp/socketImports');
-
 var storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, './srv/uploads')
+        cb(null, './srv/uploads/files')
     },
     filename: (req, file, cb) => {
         cb(null, file.originalname)
