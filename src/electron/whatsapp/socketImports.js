@@ -1,4 +1,7 @@
 const {
+    getChats
+} = require("./chatHandler");
+const {
     finishImport
 } = require("./importHandler");
 
@@ -18,6 +21,15 @@ function initSockets(socket) {
     socket.on('disconnect', function () {
         console.log('A user disconnected');
     });
+
+    socket.on('getchats', async function () {
+        try {
+            const {rows} = await getChats()
+            socket.emit("all-chats", rows);
+        } catch (error) {
+            console.log(error);
+        }
+    })
 }
 
 module.exports = {

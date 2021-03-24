@@ -5,7 +5,7 @@
   import InfiniteScroll from "./widgets/list/InfiniteScroll.svelte";
   import SearchBar from "./widgets/SearchBar.svelte";
   import { getChats } from "../util/moc";
-  import { getAllChats } from "../store/pouch-store";
+  import { getAllChats } from "../store/socket-store";
 
   let page = 0;
   // but most likely, you'll have to store a token to fetch the next page

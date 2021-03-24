@@ -19,4 +19,7 @@ This project is using Svelte for the UI and its running in Electron. You get all
 - import contacts to associate with chats
 - import chats from other messengers
 
+## Problems 
+
+- I cant seem to make pouchdb-browser work with svelte (probably a problem with my rollup config) **Temp fix** - Just use sockets for the communication to electron
 > 

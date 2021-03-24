@@ -7,6 +7,7 @@ const socket = io('http://localhost:8069')
 
 let socketID = writable(null);
 let uploadProgress = writable(null);
+let chats = writable([])
 
 socket.on('connect', () => {
     console.log("connected 🍕");
@@ -29,6 +30,15 @@ socket.on('import-finished', () => {
     console.log('import-finished');
 })
 
+socket.on('all-chats', (argd) => {
+    chats.set(argd)
+    console.log('received all chats', argd);
+})
+
+function getAllChats () {
+    socket.emit('getchats')
+}
+
 function sendImportDetails(details) {
     socket.emit('finish-import', details);
 }
@@ -36,5 +46,6 @@ function sendImportDetails(details) {
 export {
     socketID,
     uploadProgress,
-    sendImportDetails
+    sendImportDetails,
+    getAllChats
 }
