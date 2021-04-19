@@ -4,31 +4,22 @@
   import { push, replace } from "svelte-spa-router";
   import InfiniteScroll from "./widgets/list/InfiniteScroll.svelte";
   import SearchBar from "./widgets/SearchBar.svelte";
-  import { getChats } from "../util/moc";
-  import { getAllChats } from "../store/socket-store";
-
-  let page = 0;
-  // but most likely, you'll have to store a token to fetch the next page
-  let nextUrl = "";
-  // store all the data here.
-  let data = [];
-  // store the new batch of data here.
-  let newBatch = [];
+  import { getAllChats, chats } from "../store/socket-store";
+  import { activeChat } from "../store";
 
   async function fetchData() {
-    // const response = await fetch(
-    //   `https://api.openbrewerydb.org/breweries?by_city=los_angeles&page=${page}`
-    // );
-    newBatch = getChats(20);
     await getAllChats();
   }
 
   onMount(() => {
-    // load first batch onMount
     fetchData();
-    data = [...data, ...newBatch];
   });
 
+  let data = [];
+  const unsubscribe = chats.subscribe((value) => {
+    data = value;
+  });
+  let page = 0;
   let selected;
   let chatList;
   let sidebar;
@@ -47,16 +38,17 @@
         }}
         on:click={() => {
           selected = item.id;
+          activeChat.set(item)
           push(`/chat/${item.id}`);
         }}
       >
         <img
           src="https://placeimg.com/80/80/animals"
-          alt={item.name}
+          alt={item.doc.name}
           class="rounded-full w-12 h-12 m-auto"
         />
         <div class="p-2">
-          <span class="subtitle-1 font-semibold">{item.name}</span>
+          <span class="subtitle-1 font-semibold">{item.doc.name}</span>
           <div class="flex">
             <span class="w-10/12 truncate"
               >This is a sample preview message</span
@@ -68,7 +60,7 @@
     {/each}
   </div>
   <InfiniteScroll
-    hasMore={newBatch.length}
+    hasMore={data.length}
     threshold={100}
     elementScroll={chatList}
     on:loadMore={() => {

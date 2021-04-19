@@ -47,5 +47,6 @@ export {
     socketID,
     uploadProgress,
     sendImportDetails,
-    getAllChats
+    getAllChats,
+    chats
 }

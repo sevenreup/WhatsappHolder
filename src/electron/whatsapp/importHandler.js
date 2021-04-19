@@ -43,7 +43,8 @@ async function finishImport({
             if (selectedUser == message.author && useImports == true) {
                 message.isOwner = true
             } else {
-                message.author = hash[message.author]._id
+                message.isSystem = message.author == "System"
+                message.author = hash[message.author].id
             }
             return message
         });
@@ -100,7 +101,7 @@ async function getChatUsersInformation(users, mine, useRaw) {
                 if (raw.docs[0].ok !== null && raw.docs[0].ok !== undefined) {
                     const user = raw.docs[0].ok
                     return {
-                        _id: user._id,
+                        id: user._id,
                         name: user.name
                     }
                 }

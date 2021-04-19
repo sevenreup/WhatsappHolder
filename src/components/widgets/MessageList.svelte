@@ -9,36 +9,38 @@
     container: "#message-holder",
     duration: 100,
   });
-
-  async function fetchData() {
-    newData = loadItems(page, size, user);
-  }
   
   export let page = 0;
-  export let user = {}
-  let items = [];
-  let size = 50;
+  export let messages = {}
+  export let participants = {};
+
   let messageList;
 
+  function getAuthor(id) {
+    for(const key in participants) {
+      const obj = participants[key]
+      if (obj.id == id) {
+        return obj
+      }
+    }
+    return {}
+  }
 
-  $: newData = loadItems(page, size, user)
-
-  $: items = [...items, ...newData];
 </script>
 
 <div class="list flex relative mb-3 h-full p-3 w-full" bind:this={messageList}>
   <MesageInfiniteList
-    {items}
+    items={messages}
     element={messageList}
-    hasMore={newData.length}
+    hasMore={messages.length}
     on:loadMore={() => {
       page++;
-      fetchData();
+      // fetchData();
     }}
     let:index
     let:item
   >
-    <li class="block relative" slot="item"><Message {item} /></li>
+    <li class="block relative" slot="item"><Message {item} author={getAuthor(item.author)}/></li>
   </MesageInfiniteList>
 </div>
 
