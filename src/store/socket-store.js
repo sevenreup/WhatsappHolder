@@ -47,11 +47,16 @@ function openFileElectron(folder, file) {
     socket.emit('open-file', {folder, file})
 }
 
+function openLinkElectron(link) {
+    socket.emit('open-link', link)
+}
+
 export {
     socketID,
     uploadProgress,
     sendImportDetails,
     getAllChats,
     chats,
-    openFileElectron
+    openFileElectron,
+    openLinkElectron
 }

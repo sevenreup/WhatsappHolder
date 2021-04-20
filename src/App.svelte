@@ -7,6 +7,8 @@
   import EmptyState from "./pages/EmptyState.svelte";
   import Tailwind from "./components/Tailwind.svelte";
   import Socket from "./components/Socket.svelte";
+  import { openLinkElectron } from "./store/socket-store";
+
   let routes = {
     "/": Home,
     "/chat": Home,
@@ -15,6 +17,12 @@
     "*": EmptyState,
   };
 
+  window.openLinkInBrowser = (event) => {
+    event.preventDefault();
+    const anchor = event.target.closest("a");
+    if (!anchor) return;
+    openLinkElectron(anchor.getAttribute("href"));
+  };
   function conditionsFailed(event) {
     replace("/err");
   }

@@ -45,6 +45,15 @@ function initSockets(socket) {
         }
 
     })
+
+    socket.on('open-link', async (args) => {
+        try {
+            await require('electron').shell.openExternal(args)
+        } catch (error) {
+            console.log(error)        
+        }
+    
+    })
 }
 
 module.exports = {

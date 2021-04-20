@@ -15,6 +15,7 @@ This project is using Svelte for the UI and its running in Electron. You get all
 
 ## Future plans (all lies)
 
+- Merge imports
 - pin chats
 - import contacts to associate with chats
 - import chats from other messengers

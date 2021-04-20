@@ -1,9 +1,31 @@
 <script>
-import MediaHolder from "./MediaHolder.svelte";
+  import MediaHolder from "./MediaHolder.svelte";
+  import linkifyHtml from "linkifyjs/html";
+  import * as linkify from "linkifyjs";
 
   export let item;
   export let author;
   export let path;
+
+  function getText(text) {
+    if (text !== null && text !== undefined) {
+      return linkifyHtml(text, {
+        defaultProtocol: "https",
+        className: "underline",
+        attributes: {
+          onclick: `openLinkInBrowser(event)`
+        }
+      });
+    }
+  }
+
+  function hasLink(text) {
+    if (text !== null && text !== undefined) {
+      const links = linkify.find(text);
+      return links.length > 0;
+    }
+    return false;
+  }
 </script>
 
 {#if !item.isSystem}
@@ -28,9 +50,13 @@ import MediaHolder from "./MediaHolder.svelte";
           : 'bg-blue-400 rounded-br-3xl'}"
       >
         {#if !item.isMedia}
-          {item.message}
+          {#if hasLink(item.message)}
+            {@html getText(item.message)}
+          {:else}
+            {item.message}
+          {/if}
         {:else}
-          <MediaHolder attachment={item.attachment} {path}/>
+          <MediaHolder attachment={item.attachment} {path} />
         {/if}
       </p>
       <div class={item.isOwner ? "text-right" : "text-left"}>
