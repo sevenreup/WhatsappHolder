@@ -1,4 +1,7 @@
 const {
+    openFileInProgram
+} = require("../util/fileUtils");
+const {
     getChats
 } = require("./chatHandler");
 const {
@@ -25,11 +28,22 @@ function initSockets(socket) {
 
     socket.on('getchats', async function () {
         try {
-            const {rows} = await getChats()
+            const {
+                rows
+            } = await getChats()
             socket.emit("all-chats", rows);
         } catch (error) {
             console.log(error);
         }
+    })
+
+    socket.on('open-file', async (args) => {
+        try {
+            await openFileInProgram(args.folder, args.file)
+        } catch (error) {
+            console.log(error);
+        }
+
     })
 }
 

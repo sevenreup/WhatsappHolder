@@ -43,10 +43,15 @@ function sendImportDetails(details) {
     socket.emit('finish-import', details);
 }
 
+function openFileElectron(folder, file) {
+    socket.emit('open-file', {folder, file})
+}
+
 export {
     socketID,
     uploadProgress,
     sendImportDetails,
     getAllChats,
-    chats
+    chats,
+    openFileElectron
 }

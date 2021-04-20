@@ -1,11 +1,11 @@
 <script>
   import AudioPlayer from "./AudioPlayer.svelte";
   import VideoPlayer from "svelte-video-player";
+  import FileHolder from "./FileHolder.svelte";
 
   export let attachment;
   export let path;
 
-  console.log(attachment);
   function getPath(file) {
     return "http://localhost:8069/" + path + "/" + file;
   }
@@ -26,10 +26,7 @@
 {:else if attachment.ext == "jpg"}
   <img src={getPath(attachment.fileName)} alt={attachment.fileName} />
 {:else}
-<div class="bg-gray-200">
-   doc or file
-</div>
- 
+  <FileHolder {attachment} />
 {/if}
 
 <style>

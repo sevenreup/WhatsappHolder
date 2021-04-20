@@ -4,6 +4,7 @@ import {
 const BASEURL = writable('');
 const activeChat = writable({
     doc: {
+        config: {},
         messages: [],
         users: {}
     }
