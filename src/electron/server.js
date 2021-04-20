@@ -23,6 +23,7 @@ createRequiredPaths()
 var app = express();
 const http = require('http').Server(app)
 app.use(cors())
+app.use(express.static('./srv/media'))
 
 const pouch = require('express-pouchdb')({
     mode: 'fullCouchDB',

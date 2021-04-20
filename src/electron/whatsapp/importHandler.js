@@ -7,7 +7,8 @@ const {
     deleteTempMessages
 } = require('../db/ImportDB');
 const {
-    saveImportedChats
+    saveImportedChats,
+    updateMediaFolder
 } = require('../db/MessagesDB');
 const {
     getFileType
@@ -67,6 +68,7 @@ async function finishImport({
             try {
                 const data = await finishImportZip(chat.id, extra.tempFolder)
                 console.log(data);
+                await updateMediaFolder(chat.id, data)
             } catch (error) {
                 console.log(error);
             }

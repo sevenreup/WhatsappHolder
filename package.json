@@ -66,6 +66,7 @@
     "socket.io-client": "^4.0.0",
     "svelte-file-dropzone": "^0.0.15",
     "svelte-spa-router": "^3.1.0",
+    "svelte-video-player": "^1.2.5",
     "unzipper": "^0.10.11",
     "uuid": "^8.3.2",
     "whatsapp-chat-parser": "^3.1.0"

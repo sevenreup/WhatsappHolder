@@ -13,6 +13,7 @@
   export let page = 0;
   export let messages = {}
   export let participants = {};
+  export let chatID;
 
   let messageList;
 
@@ -40,7 +41,7 @@
     let:index
     let:item
   >
-    <li class="block relative" slot="item"><Message {item} author={getAuthor(item.author)}/></li>
+    <li class="block relative" slot="item"><Message {item} author={getAuthor(item.author)} path={chatID}/></li>
   </MesageInfiniteList>
 </div>
 

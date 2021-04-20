@@ -1,6 +1,7 @@
 import {
     writable
 } from 'svelte/store';
+const BASEURL = writable('');
 const activeChat = writable({
     doc: {
         messages: [],

@@ -3,6 +3,7 @@ import MediaHolder from "./MediaHolder.svelte";
 
   export let item;
   export let author;
+  export let path;
 </script>
 
 {#if !item.isSystem}
@@ -29,7 +30,7 @@ import MediaHolder from "./MediaHolder.svelte";
         {#if !item.isMedia}
           {item.message}
         {:else}
-          <MediaHolder attachment={item.attachment}/>
+          <MediaHolder attachment={item.attachment} {path}/>
         {/if}
       </p>
       <div class={item.isOwner ? "text-right" : "text-left"}>

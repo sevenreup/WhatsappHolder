@@ -114,7 +114,7 @@ const finishImportZip = async (id, folder) => {
     try {
         const neeFolder = './srv/media/' + id
         await fs.move(folder, neeFolder)
-        return neeFolder + id
+        return path.resolve(neeFolder)
     } catch (error) {
         console.log(error);
     }

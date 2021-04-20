@@ -11,10 +11,12 @@
 
   let user = {};
   let participants = {};
+  let id;
 
   const unsubscribe = activeChat.subscribe(value => {
     user = value.doc
     participants = value.doc.users
+    id = value.id
     console.log(participants);
   })
 </script>
@@ -28,7 +30,7 @@
       chat={user}
       on:openSidebar={() => (openSidebar = !openSidebar)}
     />
-    <MessageList bind:page messages={user.messages} {participants}/>
+    <MessageList bind:page messages={user.messages} {participants} chatID={id}/>
   </div>
   <ChatInfoSidebar
     open={openSidebar}
