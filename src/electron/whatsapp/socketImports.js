@@ -2,7 +2,8 @@ const {
     openFileInProgram
 } = require("../util/fileUtils");
 const {
-    getChats
+    getChats,
+    getPreviewMedia
 } = require("./chatHandler");
 const {
     finishImport
@@ -50,9 +51,18 @@ function initSockets(socket) {
         try {
             await require('electron').shell.openExternal(args)
         } catch (error) {
-            console.log(error)        
+            console.log(error)
         }
-    
+
+    })
+
+    socket.on('get-chat-media', async (id) => {
+        try {
+            const data = await getPreviewMedia(id)
+            socket.emit("preview-chat-media", data);
+        } catch (error) {
+            console.log(error);
+        }
     })
 }
 

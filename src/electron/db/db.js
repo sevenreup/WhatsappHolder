@@ -16,6 +16,16 @@ const contactsDB = PouchDB.defaults({
   prefix: path.join(dbPath, 'db/')
 })('contacts');
 
+messageDB.createIndex({
+    index: {
+      fields: ['isMedia', 'date', 'attachment.ext']
+    }
+  })
+  .then(() => console.log('indexing done'))
+  .catch(error => console.log(error))
+
+
+
 module.exports = {
   zipperDB,
   messageDB,

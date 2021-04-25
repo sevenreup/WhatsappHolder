@@ -8,6 +8,7 @@ const socket = io('http://localhost:8069')
 let socketID = writable(null);
 let uploadProgress = writable(null);
 let chats = writable([])
+let sideInfo = writable(null)
 
 socket.on('connect', () => {
     console.log("connected 🍕");
@@ -35,7 +36,12 @@ socket.on('all-chats', (argd) => {
     console.log('received all chats', argd);
 })
 
-function getAllChats () {
+socket.on('preview-chat-media', data => {
+    console.log(data);
+    sideInfo.set(data)
+})
+
+function getAllChats() {
     socket.emit('getchats')
 }
 
@@ -44,19 +50,27 @@ function sendImportDetails(details) {
 }
 
 function openFileElectron(folder, file) {
-    socket.emit('open-file', {folder, file})
+    socket.emit('open-file', {
+        folder,
+        file
+    })
 }
 
 function openLinkElectron(link) {
     socket.emit('open-link', link)
 }
 
+function getChatMediaPreview(id) {
+    socket.emit('get-chat-media', id)
+}
+
 export {
     socketID,
     uploadProgress,
-    sendImportDetails,
-    getAllChats,
     chats,
+    getAllChats,
+    sendImportDetails,
     openFileElectron,
-    openLinkElectron
+    openLinkElectron,
+    getChatMediaPreview
 }

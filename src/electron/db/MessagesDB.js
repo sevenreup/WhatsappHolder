@@ -3,6 +3,7 @@ const {
 } = require("./db");
 
 async function saveImportedChats(data) {
+    console.log(data);
     return await messageDB.post(data)
 }
 
@@ -20,8 +21,24 @@ async function getAllChats() {
     return await messageDB.allDocs({include_docs: true})
 }
 
+async function getChatWithID(id) {
+    return await messageDB.get(id)
+}
+
+async function getMediaPreview(id) {
+    return await messageDB.find({
+        selector: {
+            isMedia: true,
+        },
+        limit: 6
+    })
+}
+
+
 module.exports = {
     saveImportedChats,
     getAllChats,
-    updateMediaFolder
+    updateMediaFolder,
+    getChatWithID,
+    getMediaPreview
 }
