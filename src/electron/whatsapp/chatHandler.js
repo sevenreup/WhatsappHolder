@@ -1,20 +1,54 @@
-const { getAllChats, getChatWithID, getMediaPreview } = require("../db/MessagesDB")
+const {
+    getMediaPreview,
+    saveImportedMessagesDB,
+    getAllMessages
+} = require("../db/MessagesDB")
+
+const {
+    getChatDB,
+    updateChat,
+    saveImportedChats,
+    getAllChatsDB
+} = require("../db/ChatDB")
 
 async function getChats() {
-    return await getAllChats()
+    return await getAllChatsDB()
 }
 
 async function getChat(id) {
-    return await getChatWithID(id)
+    return await getChatDB(id)
 }
 
+
+async function getMessages(id) {
+    return await getAllMessages(id)
+}
 
 async function getPreviewMedia(id) {
     return await getMediaPreview(id)
 }
 
+async function createChat(data) {
+    return await saveImportedChats(data)
+}
+
+async function updateMediaFolder(id, folder) {
+    const doc = await getChat(id)
+    doc.folder = folder
+    return await updateChat(doc)
+}
+
+async function saveImportedMessages(messages) {
+    return saveImportedMessagesDB(messages)
+}
+
 module.exports = {
     getChats,
     getChat,
-    getPreviewMedia
+    getMessages,
+    getPreviewMedia,
+    createChat,
+    createChat,
+    saveImportedMessages,
+    updateMediaFolder
 }

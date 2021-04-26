@@ -3,7 +3,8 @@ const {
 } = require("../util/fileUtils");
 const {
     getChats,
-    getPreviewMedia
+    getPreviewMedia,
+    getMessages
 } = require("./chatHandler");
 const {
     finishImport
@@ -33,6 +34,15 @@ function initSockets(socket) {
                 rows
             } = await getChats()
             socket.emit("all-chats", rows);
+        } catch (error) {
+            console.log(error);
+        }
+    })
+
+    socket.on('getMessages', async function (args) {
+        try {
+            const {docs} = await getMessages(args)
+            socket.emit("all-messages", docs);
         } catch (error) {
             console.log(error);
         }

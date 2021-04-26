@@ -8,6 +8,7 @@ const socket = io('http://localhost:8069')
 let socketID = writable(null);
 let uploadProgress = writable(null);
 let chats = writable([])
+let messages = writable([])
 let sideInfo = writable(null)
 
 socket.on('connect', () => {
@@ -36,6 +37,11 @@ socket.on('all-chats', (argd) => {
     console.log('received all chats', argd);
 })
 
+socket.on('all-messages', (argd) => {
+    messages.set(argd)
+    console.log('received all messages', argd);
+})
+
 socket.on('preview-chat-media', data => {
     console.log(data);
     sideInfo.set(data)
@@ -43,6 +49,10 @@ socket.on('preview-chat-media', data => {
 
 function getAllChats() {
     socket.emit('getchats')
+}
+
+function getAllMessages(id) {
+    socket.emit('getMessages', id)
 }
 
 function sendImportDetails(details) {
@@ -68,7 +78,9 @@ export {
     socketID,
     uploadProgress,
     chats,
+    messages,
     getAllChats,
+    getAllMessages,
     sendImportDetails,
     openFileElectron,
     openLinkElectron,

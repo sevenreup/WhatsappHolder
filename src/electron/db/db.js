@@ -12,16 +12,33 @@ const messageDB = PouchDB.defaults({
   prefix: path.join(dbPath, 'db/')
 })('messages');
 
+const chatDB = PouchDB.defaults({
+  prefix: path.join(dbPath, 'db/')
+})('chats');
+
 const contactsDB = PouchDB.defaults({
   prefix: path.join(dbPath, 'db/')
 })('contacts');
 
-messageDB.createIndex({
-    index: {
-      fields: ['isMedia', 'date', 'attachment.ext']
-    }
-  })
-  .then(() => console.log('indexing done'))
+
+async function createIndexes() {
+  try {
+    await messageDB.createIndex({
+      index: {
+        fields: ['date', 'chatID']
+      }
+    })
+    await messageDB.createIndex({
+      index: {
+        fields: ['isMedia', 'date', 'attachment.ext']
+      }
+    })
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+createIndexes().then(() => console.log('indexing done'))
   .catch(error => console.log(error))
 
 
@@ -29,5 +46,6 @@ messageDB.createIndex({
 module.exports = {
   zipperDB,
   messageDB,
-  contactsDB
+  contactsDB,
+  chatDB
 }

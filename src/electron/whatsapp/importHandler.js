@@ -7,16 +7,17 @@ const {
     deleteTempMessages
 } = require('../db/ImportDB');
 const {
-    saveImportedChats,
-    updateMediaFolder
-} = require('../db/MessagesDB');
-const {
     getFileType
 } = require('../util/fileUtils');
 const {
     finishImportZip,
     deleteProcessedFile
 } = require('./filehandler')
+const {
+    createChat,
+    saveImportedMessages,
+    updateMediaFolder
+} = require('./chatHandler')
 
 async function finishImport({
     id,
@@ -34,9 +35,15 @@ async function finishImport({
         const participants = await getChatUsersInformation(users, selectedUser, useImports)
         const hash = createUserHash(participants)
 
+        const chat = await createChat({
+            name: 'random',
+            users: hash
+        })
+
         const data = messages.map(message => {
             message.isMedia = false;
             message.isOwner = false;
+            message.chatID = chat.id;
             if (message.attachment !== null && message.attachment !== undefined) {
                 message.isMedia = true;
                 message.attachment.ext = getFileType(message.attachment.fileName);
@@ -50,19 +57,7 @@ async function finishImport({
             return message
         });
 
-
-        const config = {
-            isConfig: true,
-        }
-
-        data.push(config);
-
-        const chat = await saveImportedChats({
-            messages: data,
-            config,
-            name: 'random',
-            users: hash
-        })
+        await saveImportedMessages(data)
 
         if (isZip) {
             try {
