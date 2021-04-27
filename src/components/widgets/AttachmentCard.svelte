@@ -27,7 +27,7 @@
   }
 </script>
 
-<div class="m-1">
+<div class="m-1" on:click>
   <div
     class={`rounded-lg overflow-hidden ${isLarge ? "w-44 h-44" : "w-28 h-28"}`}
   >
