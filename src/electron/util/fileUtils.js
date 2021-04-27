@@ -14,7 +14,7 @@ const createRequiredPaths = () => {
     });
 }
 
-const openFileInProgram = async (folder,file) => {
+const openFileInProgram = async (folder, file) => {
     return await require('electron').shell.openPath(require('path').join(folder, file))
 }
 

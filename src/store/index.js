@@ -3,11 +3,7 @@ import {
 } from 'svelte/store';
 const BASEURL = writable('');
 const activeChat = writable({
-    doc: {
-        config: {},
-        messages: [],
-        users: {}
-    }
+    users: []
 });
 const lastChatURL = writable('/chat');
 

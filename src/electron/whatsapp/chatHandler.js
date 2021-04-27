@@ -1,7 +1,8 @@
 const {
     getMediaPreview,
     saveImportedMessagesDB,
-    getAllMessages
+    getAllMessages,
+    getMediaAll
 } = require("../db/MessagesDB")
 
 const {
@@ -28,6 +29,10 @@ async function getPreviewMedia(id) {
     return await getMediaPreview(id)
 }
 
+async function getAllMedia(id) {
+    return await getMediaAll(id)
+}
+
 async function createChat(data) {
     return await saveImportedChats(data)
 }
@@ -47,6 +52,7 @@ module.exports = {
     getChat,
     getMessages,
     getPreviewMedia,
+    getAllMedia,
     createChat,
     createChat,
     saveImportedMessages,

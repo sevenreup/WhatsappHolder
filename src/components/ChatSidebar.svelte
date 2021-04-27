@@ -38,7 +38,7 @@
         }}
         on:click={() => {
           selected = item.id;
-          activeChat.set(item)
+          activeChat.set(item.doc)
           push(`/chat/${item.id}`);
         }}
       >

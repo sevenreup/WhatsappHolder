@@ -6884,6 +6884,11 @@ svelte-file-dropzone@^0.0.15:
   dependencies:
     file-selector "^0.2.2"
 
+svelte-icons@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/svelte-icons/-/svelte-icons-2.1.0.tgz#6f2ec72f1d5c8b2de1a4b8a822c95bcb2f701aca"
+  integrity sha512-rHPQjweEc9fGSnvM0/4gA3pDHwyZyYsC5KhttCZRhSMJfLttJST5Uq0B16Czhw+HQ+HbSOk8kLigMlPs7gZtfg==
+
 svelte-preprocess@^4.6.9:
   version "4.6.9"
   resolved "https://registry.npmjs.org/svelte-preprocess/-/svelte-preprocess-4.6.9.tgz"
@@ -7428,6 +7433,11 @@ verror@1.10.0:
     assert-plus "^1.0.0"
     core-util-is "1.0.2"
     extsprintf "^1.2.0"
+
+video-metadata-thumbnails@^1.0.22:
+  version "1.0.22"
+  resolved "https://registry.yarnpkg.com/video-metadata-thumbnails/-/video-metadata-thumbnails-1.0.22.tgz#3971365ccb4e3a3ccf16d6783b4dcf70141d0267"
+  integrity sha512-4ezjm5wpHV8jun/g9rOq6LWZZ/D8pMTuDBbO6UtJX0lARy26o6fs0r7LIaKheFK2T0BencGyLp+pWdoiYaqwyw==
 
 vuvuzela@1.0.3:
   version "1.0.3"

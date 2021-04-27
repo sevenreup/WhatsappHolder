@@ -5,11 +5,13 @@
   import ChatsEmpty from "./chats/ChatsEmpty.svelte";
   import ChatSingle from "./chats/ChatSingle.svelte";
   import { lastChatURL } from "../store";
+  import ChatMedia from "./chats/ChatMedia.svelte";
   export let params = {};
 
   const prefix = "/chat";
   const routes = {
     "/:chatId": ChatSingle,
+    "/:chatId/media": ChatMedia,
     "/*": ChatsEmpty,
   };
 

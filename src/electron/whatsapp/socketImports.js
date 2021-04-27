@@ -4,7 +4,8 @@ const {
 const {
     getChats,
     getPreviewMedia,
-    getMessages
+    getMessages,
+    getAllMedia
 } = require("./chatHandler");
 const {
     finishImport
@@ -68,8 +69,17 @@ function initSockets(socket) {
 
     socket.on('get-chat-media', async (id) => {
         try {
-            const data = await getPreviewMedia(id)
-            socket.emit("preview-chat-media", data);
+            const {docs} = await getPreviewMedia(id)
+            socket.emit("preview-chat-media", docs);
+        } catch (error) {
+            console.log(error);
+        }
+    })
+
+    socket.on('get-chat-media-all', async (id) => {
+        try {
+            const {docs} = await getAllMedia(id)
+            socket.emit("chat-media-all", docs);
         } catch (error) {
             console.log(error);
         }

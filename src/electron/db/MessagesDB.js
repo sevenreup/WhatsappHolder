@@ -19,6 +19,17 @@ async function getMediaPreview(id) {
     })
 }
 
+async function getMediaAll(id) {
+    return await messageDB.find({
+        selector: {
+            chatID: {
+                $eq: id
+            },
+            isMedia: true,
+        }
+    })
+}
+
 async function getAllMessages(id) {
     return await messageDB.find({
         selector: {
@@ -38,5 +49,6 @@ async function getAllMessages(id) {
 module.exports = {
     saveImportedMessagesDB,
     getMediaPreview,
-    getAllMessages
+    getAllMessages,
+    getMediaAll
 }

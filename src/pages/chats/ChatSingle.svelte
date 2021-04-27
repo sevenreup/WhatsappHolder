@@ -16,9 +16,10 @@
   let messagesData = []
 
   const unsubscribe = activeChat.subscribe((value) => {
-    user = value.doc;
-    participants = value.doc.users;
-    id = value.id;
+    console.log(value);
+    user = value;
+    participants = value.users;
+    id = value._id;
     console.log(participants);
     if (id !== null && id !== undefined) {
       getAllMessages(id)
@@ -27,7 +28,6 @@
   });
 
   const unsubMesages = messages.subscribe(value => {
-    console.log(value);
     messagesData = value
   })
 
