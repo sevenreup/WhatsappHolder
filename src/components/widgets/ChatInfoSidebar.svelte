@@ -32,18 +32,14 @@
     </button>
   </div>
   <div class="p-2">
-    <img
-      src="https://placeimg.com/100/100/animals"
-      alt="profile"
-      class="rounded-full w-28 h-28 m-auto"
-    />
+    <img src={user.img} alt="profile" class="rounded-full w-28 h-28 m-auto" />
     <p class="text-center text-2xl font-bold mt-2">{user.name}</p>
   </div>
 
   <Collapsable>
     <h2 slot="title" class="text-lg font-bold">Information</h2>
     <div slot="body" class="mt-2">
-      { (user.desc !== undefined) ? user.desc : 'Imported'}
+      {user.desc !== undefined ? user.desc : "Imported"}
     </div>
   </Collapsable>
   <div class="p-2 mt-3">
@@ -62,4 +58,8 @@
       {/if}
     </div>
   </div>
+  <button class="w-full bg-white p-2 rounded-lg flex">
+    <div class="icon"><IoIosClose /></div>
+    <p class="m-auto">Edit Chat</p>
+  </button>
 </main>

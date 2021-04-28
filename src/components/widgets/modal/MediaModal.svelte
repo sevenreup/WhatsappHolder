@@ -6,6 +6,5 @@
 </script>
 
 <div>
-  <h4>Video</h4>
   <MediaHolder {attachment} {path} />
 </div>

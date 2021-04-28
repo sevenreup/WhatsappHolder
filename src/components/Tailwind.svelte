@@ -9,4 +9,8 @@
     width: 32px;
     height: 32px;
   }
+
+  .active svg {
+    fill: white;
+  }
 </style>

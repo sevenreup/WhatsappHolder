@@ -46,4 +46,5 @@ import Modal from "../components/widgets/modal/Modal.svelte";
     height: 100%;
     overflow: hidden;
   }
+
 </style>

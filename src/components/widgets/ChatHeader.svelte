@@ -9,9 +9,9 @@
   <div class="flex p-6 justify-between">
     <div class="flex cursor-pointer" on:click={() => dispatch("openSidebar")}>
       <img
-        src="https://placeimg.com/80/80/animals"
+        src={chat.img}
         alt="profile"
-        class="rounded-full w-12 h-12 m-auto"
+        class="rounded-lg w-12 h-12 m-auto"
       />
       <span class="text-xl p-2 font-bold">{chat.name}</span>
     </div>
