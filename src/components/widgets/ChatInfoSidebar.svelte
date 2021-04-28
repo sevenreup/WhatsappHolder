@@ -2,9 +2,9 @@
   import { createEventDispatcher } from "svelte";
   import Collapsable from "./Collapsable.svelte";
   import { sideInfo } from "../../store/socket-store";
-  import AttachmentCard from "./AttachmentCard.svelte";
-  import { push, replace } from "svelte-spa-router";
+  import { push } from "svelte-spa-router";
   import AttachmentList from "./list/AttachmentList.svelte";
+  import IoIosClose from "svelte-icons/io/IoIosClose.svelte";
 
   export let open = false;
   export let user = {};
@@ -24,7 +24,12 @@
   style="width: 300px; {!open ? 'transform: translateX(300px)' : ''}"
 >
   <div>
-    <button on:click={() => dispatch("close")}> close </button>
+    <button
+      class="icon bg-white rounded-full"
+      on:click={() => dispatch("close")}
+    >
+      <IoIosClose />
+    </button>
   </div>
   <div class="p-2">
     <img
@@ -38,9 +43,7 @@
   <Collapsable>
     <h2 slot="title" class="text-lg font-bold">Information</h2>
     <div slot="body" class="mt-2">
-      Lorem ipsum dolor sit amet consectetur adipisicing elit. Perferendis,
-      eaque ratione ipsam quos autem quia voluptatem aliquid eius assumenda est
-      cupiditate iure libero atque molestias! Ut magnam sunt et aliquid!
+      { (user.desc !== undefined) ? user.desc : 'Imported'}
     </div>
   </Collapsable>
   <div class="p-2 mt-3">

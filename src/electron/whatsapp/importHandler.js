@@ -22,7 +22,8 @@ const {
 async function finishImport({
     id,
     selectedUser,
-    useImports
+    useImports,
+    name
 }) {
     try {
         const {
@@ -36,7 +37,9 @@ async function finishImport({
         const hash = createUserHash(participants)
 
         const chat = await createChat({
-            name: 'random',
+            name: name,
+            img: 'img/placeholder.jpg',
+            desc: 'Chat imported from Whatsapp..',
             users: hash
         })
 

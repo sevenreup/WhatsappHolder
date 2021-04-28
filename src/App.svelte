@@ -30,10 +30,8 @@
 
 <Tailwind />
 <Socket />
+<AppBar />
 <main class="main-grid">
-  <nav class="toolbar">
-    <AppBar />
-  </nav>
   <nav class="sidebar">
     <MainSidebar />
   </nav>
@@ -50,18 +48,12 @@
   .main-grid {
     display: grid;
     height: 100vh;
+    overflow: hidden;   
+    padding-top: 30px;
     grid-template-columns: 5% auto;
-    grid-template-rows: 30px auto;
-  }
-  .sidebar {
-    grid-row-start: 2;
-  }
-  .toolbar {
-    grid-column-start: 1;
-    grid-column-end: span 2;
   }
   .main {
-    grid-column-start: 2;
     overflow: hidden;
+ 
   }
 </style>

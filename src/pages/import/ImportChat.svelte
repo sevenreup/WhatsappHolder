@@ -68,7 +68,8 @@
       });
   }
 
-  function finishImport({ detail }) {
+  function finishImport({detail}) {
+    console.log(detail);
     const data = { ...detail, id: uploadStats.id };
     console.log(data);
     sendImportDetails(data);
