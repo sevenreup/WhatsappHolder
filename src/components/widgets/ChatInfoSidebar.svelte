@@ -5,6 +5,7 @@
   import { push } from "svelte-spa-router";
   import AttachmentList from "./list/AttachmentList.svelte";
   import IoIosClose from "svelte-icons/io/IoIosClose.svelte";
+  import EditChat from "../../pages/chats/EditChat.svelte";
 
   export let open = false;
   export let user = {};
@@ -15,6 +16,8 @@
   const unsub = sideInfo.subscribe((value) => {
     files = value;
   });
+
+  let openEdit = false;
 
   console.log({ user });
 </script>
@@ -58,8 +61,12 @@
       {/if}
     </div>
   </div>
-  <button class="w-full bg-white p-2 rounded-lg flex">
+  <button
+    class="w-full bg-white p-2 rounded-lg flex"
+    on:click={() => (openEdit = true)}
+  >
     <div class="icon"><IoIosClose /></div>
     <p class="m-auto">Edit Chat</p>
   </button>
+  <EditChat bind:open={openEdit} />
 </main>
