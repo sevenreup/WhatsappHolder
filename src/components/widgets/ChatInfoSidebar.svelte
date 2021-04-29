@@ -5,7 +5,7 @@
   import { push } from "svelte-spa-router";
   import AttachmentList from "./list/AttachmentList.svelte";
   import IoIosClose from "svelte-icons/io/IoIosClose.svelte";
-  import EditChat from "../../pages/chats/EditChat.svelte";
+  import EditChat from "./modal/EditChat.svelte";
 
   export let open = false;
   export let user = {};

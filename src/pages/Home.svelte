@@ -6,8 +6,6 @@
   import ChatSingle from "./chats/ChatSingle.svelte";
   import { lastChatURL } from "../store";
   import ChatMedia from "./chats/ChatMedia.svelte";
-import Modal from "../components/widgets/modal/Modal.svelte";
-  export let params = {};
 
   const prefix = "/chat";
   const routes = {
@@ -25,19 +23,17 @@ import Modal from "../components/widgets/modal/Modal.svelte";
   });
 </script>
 
-<Modal>
-  <main class="chat-grid">
-    <ChatSidebar />
-    <section class="chat-content overflow-y-auto p-2  bg-gray-100">
-      <Router
-        {routes}
-        {prefix}
-        on:routeLoaded={(e) => console.log(e)}
-        restoreScrollState={true}
-      />
-    </section>
-  </main>
-</Modal>
+<main class="chat-grid">
+  <ChatSidebar />
+  <section class="chat-content overflow-y-auto p-2  bg-gray-100">
+    <Router
+      {routes}
+      {prefix}
+      on:routeLoaded={(e) => console.log(e)}
+      restoreScrollState={true}
+    />
+  </section>
+</main>
 
 <style>
   .chat-grid {
@@ -46,5 +42,4 @@ import Modal from "../components/widgets/modal/Modal.svelte";
     height: 100%;
     overflow: hidden;
   }
-
 </style>

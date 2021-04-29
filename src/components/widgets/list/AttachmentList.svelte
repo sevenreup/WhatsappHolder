@@ -1,26 +1,12 @@
 <script>
-  import { getContext } from "svelte";
   import AttachmentCard from "../AttachmentCard.svelte";
-  import CloseButton from "../modal/CloseButton.svelte";
   import MediaModal from "../modal/MediaModal.svelte";
   export let files = [];
   export let id;
   export let isLarge = false;
 
-  const { open } = getContext("simple-modal");
-
-  function openModal(file) {
-    open(
-      MediaModal,
-      { attachment: file.attachment, path: id },
-      {
-        closeButton: CloseButton,
-        styleWindow: {
-          background: "transparent",
-        },
-      }
-    );
-  }
+  let open = false;
+  let attachment;
 </script>
 
 {#each files as file}
@@ -28,6 +14,13 @@
     attachment={file.attachment}
     {id}
     {isLarge}
-    on:click={() => openModal(file)}
+    on:click={() => {
+      attachment = file.attachment;
+      open = true;
+    }}
   />
 {/each}
+
+{#if open}
+  <MediaModal {attachment} path={id} bind:open />
+{/if}

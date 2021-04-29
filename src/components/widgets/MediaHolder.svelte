@@ -16,29 +16,32 @@
   }
 
   onMount(() => {
-    if (attachment.ext == "mp4")
-      getThumbnails(getPath())
-        .then((value) => {
-          poster = URL.createObjectURL(value[0].blob);
-        })
-        .catch((err) => {
-          console.log(err);
-        });
+    if (attachment !== null && attachment !== undefined)
+      if (attachment.ext == "mp4")
+        getThumbnails(getPath())
+          .then((value) => {
+            poster = URL.createObjectURL(value[0].blob);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
   });
 </script>
 
-{#if attachment.ext == "mp3" || attachment.ext == "mp4"}
-  {#if attachment.ext == "mp3"}
-    <AudioPlayer src={getPath()} />
+{#if attachment !== null && attachment !== undefined}
+  {#if attachment.ext == "mp3" || attachment.ext == "mp4"}
+    {#if attachment.ext == "mp3"}
+      <AudioPlayer src={getPath()} />
+    {:else}
+      <div class="player">
+        <VideoPlayer width="500" height="500" {poster} source={getPath()} />
+      </div>
+    {/if}
+  {:else if attachment.ext == "jpg"}
+    <img src={getPath()} alt={attachment.fileName} />
   {:else}
-    <div class="player">
-      <VideoPlayer width="500" height="500" {poster} source={getPath()} />
-    </div>
+    <FileHolder {attachment} />
   {/if}
-{:else if attachment.ext == "jpg"}
-  <img src={getPath()} alt={attachment.fileName} />
-{:else}
-  <FileHolder {attachment} />
 {/if}
 
 <style>
