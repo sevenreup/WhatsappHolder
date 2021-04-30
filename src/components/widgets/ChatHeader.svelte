@@ -1,5 +1,6 @@
 <script>
   import { createEventDispatcher } from "svelte";
+  import { getApiPath } from "../../util/appUtil";
 
   export let chat;
   const dispatch = createEventDispatcher();
@@ -9,7 +10,7 @@
   <div class="flex p-6 justify-between">
     <div class="flex cursor-pointer" on:click={() => dispatch("openSidebar")}>
       <img
-        src={chat.img}
+        src={getApiPath(chat.img)}
         alt="profile"
         class="rounded-lg w-12 h-12 m-auto"
       />

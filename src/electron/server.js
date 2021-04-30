@@ -3,7 +3,8 @@ const express = require('express');
 const cors = require('cors')
 const multer = require('multer')
 const {
-    handleFile
+    handleFile,
+    uploadProfile
 } = require('./whatsapp/filehandler');
 const {
     initSockets
@@ -24,6 +25,7 @@ var app = express();
 const http = require('http').Server(app)
 app.use(cors())
 app.use(express.static('./srv/media'))
+app.use(express.static('./public'))
 
 const pouch = require('express-pouchdb')({
     mode: 'fullCouchDB',
@@ -68,6 +70,21 @@ app.post('/upload/files', upload.array('files'), (req, res) => {
         status: 'done',
         files: req.files
     })
+})
+
+app.post('/upload/profile/:id', upload.array('files'), async (req, res) => {
+    const id = req.params.id
+    try {
+        for (let file of req.files) {
+            await uploadProfile(file, id)
+
+            res.send("uploaded")
+        }
+    } catch (error) {
+        console.log(error);
+        res.status(403).send("failed")
+    }
+
 })
 
 pouch.setPouchDB(require('pouchdb').defaults({

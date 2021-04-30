@@ -11,6 +11,7 @@ let chats = writable([])
 let messages = writable([])
 let sideInfo = writable([])
 let allMedia = writable([])
+let reload = writable(null)
 
 socket.on('connect', () => {
     console.log("connected 🍕");
@@ -53,6 +54,9 @@ socket.on('chat-media-all', data => {
     allMedia.set(data)
 })
 
+socket.on('chat-edit-saved', () => {
+    reload.set(true)
+})
 
 function getAllChats() {
     socket.emit('getchats')
@@ -85,6 +89,10 @@ function getAllMedia(id) {
     socket.emit('get-chat-media-all', id)
 }
 
+function saveChatEdits(chat) {
+    socket.emit('save-chat-edits', chat)
+}
+
 export {
     socketID,
     uploadProgress,
@@ -92,11 +100,13 @@ export {
     messages,
     sideInfo,
     allMedia,
+    reload,
     getAllChats,
     getAllMessages,
     sendImportDetails,
     openFileElectron,
     openLinkElectron,
     getChatMediaPreview,
-    getAllMedia
+    getAllMedia,
+    saveChatEdits,
 }

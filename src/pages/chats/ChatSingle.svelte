@@ -14,17 +14,16 @@
   let page = 0;
   let openSidebar = false;
 
-  let user = {};
+  let chat = {};
   let participants = {};
   let id;
   let messagesData = [];
 
   const unsubscribe = activeChat.subscribe((value) => {
     console.log(value);
-    user = value;
+    chat = value;
     participants = value.users;
     id = value._id;
-    console.log(participants);
     if (id !== null && id !== undefined) {
       getAllMessages(id);
       getChatMediaPreview(id);
@@ -42,14 +41,14 @@
     style="margin-right: {openSidebar ? '300px' : '0px'};"
   >
     <ChatHeader
-      chat={user}
+      {chat}
       on:openSidebar={() => (openSidebar = !openSidebar)}
     />
     <MessageList bind:page messages={messagesData} {participants} chatID={id} />
   </div>
   <ChatInfoSidebar
     open={openSidebar}
-    {user}
+    {chat}
     on:close={() => (openSidebar = !openSidebar)}
   />
 </main>

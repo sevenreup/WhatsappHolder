@@ -1,12 +1,14 @@
 <script>
   import { onMount } from "svelte";
-  import Router, { location } from "svelte-spa-router";
+  import Router, { location, replace } from "svelte-spa-router";
   import ChatSidebar from "../components/ChatSidebar.svelte";
   import ChatsEmpty from "./chats/ChatsEmpty.svelte";
   import ChatSingle from "./chats/ChatSingle.svelte";
   import { lastChatURL } from "../store";
   import ChatMedia from "./chats/ChatMedia.svelte";
+  import { reload } from "../store/socket-store";
 
+  let url;
   const prefix = "/chat";
   const routes = {
     "/:chatId": ChatSingle,
@@ -18,8 +20,12 @@
     location.subscribe((v) => {
       if (new RegExp("chat*").test(v)) {
         lastChatURL.set(v);
+        url = v;
       }
     });
+  });
+  const sub = reload.subscribe((value) => {
+    if (value !== null) document.location.reload();
   });
 </script>
 

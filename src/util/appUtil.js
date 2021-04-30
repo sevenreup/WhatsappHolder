@@ -6,6 +6,9 @@ function getMediaPath(path, file) {
     return "http://localhost:8069/" + path + "/" + file;
 }
 
+function getApiPath(path) {
+    return "http://localhost:8069/" + path
+}
 async function getVideoThumbnail(path) {
     return await getThumbnails(path, {
         quality: 0.6
@@ -14,5 +17,6 @@ async function getVideoThumbnail(path) {
 
 export {
     getMediaPath,
+    getApiPath,
     getVideoThumbnail
 }

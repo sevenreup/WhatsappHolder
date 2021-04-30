@@ -6,6 +6,7 @@
   import SearchBar from "./widgets/SearchBar.svelte";
   import { getAllChats, chats } from "../store/socket-store";
   import { activeChat } from "../store";
+  import { getApiPath } from "../util/appUtil";
 
   async function fetchData() {
     await getAllChats();
@@ -47,7 +48,7 @@
         </div>
         <div class="flex">
           <img
-            src={item.doc.img}
+            src={getApiPath(item.doc.img)}
             alt={item.doc.name}
             class="rounded-full w-12 h-12 m-auto"
           />

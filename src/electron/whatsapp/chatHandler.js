@@ -20,6 +20,14 @@ async function getChat(id) {
     return await getChatDB(id)
 }
 
+async function editChat(id, data) {
+    const doc = await getChat(id)
+    const newOb = {
+        ...doc,
+        ...data
+    }
+    return await updateChat(newOb)
+}
 
 async function getMessages(id) {
     return await getAllMessages(id)
@@ -43,6 +51,12 @@ async function updateMediaFolder(id, folder) {
     return await updateChat(doc)
 }
 
+async function updateImage(id, img) {
+    const doc = await getChat(id)
+    doc.img = img
+    return await updateChat(doc)
+}
+
 async function saveImportedMessages(messages) {
     return saveImportedMessagesDB(messages)
 }
@@ -56,5 +70,7 @@ module.exports = {
     createChat,
     createChat,
     saveImportedMessages,
-    updateMediaFolder
+    updateMediaFolder,
+    editChat,
+    updateImage
 }

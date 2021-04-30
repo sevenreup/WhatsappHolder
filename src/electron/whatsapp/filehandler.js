@@ -8,6 +8,9 @@ const ImportDB = require('../db/ImportDB');
 const {
     getFileType
 } = require('../util/fileUtils');
+const {
+    updateImage
+} = require('./chatHandler');
 
 const handleFile = async (upload, io) => {
     const file = path.join(upload.path, '')
@@ -124,8 +127,27 @@ const deleteProcessedFile = async (file) => {
     return await fs.remove(file)
 }
 
+const uploadProfile = async (upload, id) => {
+    const mime = require('mime-types');
+    const file = path.join(upload.path, '')
+    let ext = mime.extension(upload.mimetype);
+    const profilePath = path.join('./srv/media/', id + '/profile/profile.' + ext)
+    try {
+        await fs.ensureDir(path.join(`./srv/media/${id}/`, 'profile'))
+        await fs.rename(file, profilePath)
+        return await updateImage(id, `${id}/profile/profile.${ext}`)
+    } catch (error) {
+        console.log({
+            loc: "file handler",
+            error
+        });
+    }
+
+}
+
 module.exports = {
     handleFile,
     finishImportZip,
-    deleteProcessedFile
+    deleteProcessedFile,
+    uploadProfile
 }

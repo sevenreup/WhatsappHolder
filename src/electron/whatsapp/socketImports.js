@@ -5,7 +5,8 @@ const {
     getChats,
     getPreviewMedia,
     getMessages,
-    getAllMedia
+    getAllMedia,
+    editChat
 } = require("./chatHandler");
 const {
     finishImport
@@ -42,7 +43,9 @@ function initSockets(socket) {
 
     socket.on('getMessages', async function (args) {
         try {
-            const {docs} = await getMessages(args)
+            const {
+                docs
+            } = await getMessages(args)
             socket.emit("all-messages", docs);
         } catch (error) {
             console.log(error);
@@ -69,7 +72,9 @@ function initSockets(socket) {
 
     socket.on('get-chat-media', async (id) => {
         try {
-            const {docs} = await getPreviewMedia(id)
+            const {
+                docs
+            } = await getPreviewMedia(id)
             socket.emit("preview-chat-media", docs);
         } catch (error) {
             console.log(error);
@@ -78,10 +83,21 @@ function initSockets(socket) {
 
     socket.on('get-chat-media-all', async (id) => {
         try {
-            const {docs} = await getAllMedia(id)
+            const {
+                docs
+            } = await getAllMedia(id)
             socket.emit("chat-media-all", docs);
         } catch (error) {
             console.log(error);
+        }
+    })
+
+    socket.on('save-chat-edits', async ({data, id}) => {
+        try {
+            const value = await editChat(id, data)
+            socket.emit("chat-edit-saved", value);
+        } catch (error) {
+            console.log({loc: "save-edits", error});
         }
     })
 }

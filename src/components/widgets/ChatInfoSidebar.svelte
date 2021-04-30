@@ -6,9 +6,10 @@
   import AttachmentList from "./list/AttachmentList.svelte";
   import IoIosClose from "svelte-icons/io/IoIosClose.svelte";
   import EditChat from "./modal/EditChat.svelte";
+import { getApiPath } from "../../util/appUtil";
 
   export let open = false;
-  export let user = {};
+  export let chat = {};
   const dispatch = createEventDispatcher();
 
   let files = [];
@@ -19,7 +20,7 @@
 
   let openEdit = false;
 
-  console.log({ user });
+  console.log({ chat });
 </script>
 
 <main
@@ -35,24 +36,24 @@
     </button>
   </div>
   <div class="p-2">
-    <img src={user.img} alt="profile" class="rounded-full w-28 h-28 m-auto" />
-    <p class="text-center text-2xl font-bold mt-2">{user.name}</p>
+    <img src={getApiPath(chat.img)} alt="profile" class="rounded-full w-28 h-28 m-auto" />
+    <p class="text-center text-2xl font-bold mt-2">{chat.name}</p>
   </div>
 
   <Collapsable>
     <h2 slot="title" class="text-lg font-bold">Information</h2>
     <div slot="body" class="mt-2">
-      {user.desc !== undefined ? user.desc : "Imported"}
+      {chat.desc !== undefined ? chat.desc : "Imported"}
     </div>
   </Collapsable>
   <div class="p-2 mt-3">
     <h2 class="p-2 text-lg font-bold">Shared files</h2>
     <div class="flex flex-row flex-wrap">
-      <AttachmentList {files} id={user._id} />
+      <AttachmentList {files} id={chat._id} />
       {#if files.length > 0}
         <div
           class="bg-gray-300 w-28 h-28 rounded-lg m-1"
-          on:click={() => push(`/chat/${user._id}/media`)}
+          on:click={() => push(`/chat/${chat._id}/media`)}
         >
           <div class="w-28 h-28 flex flex-col justify-center">
             <span class="text-center font-bold">more</span>
@@ -68,5 +69,5 @@
     <div class="icon"><IoIosClose /></div>
     <p class="m-auto">Edit Chat</p>
   </button>
-  <EditChat bind:open={openEdit} />
+  <EditChat bind:open={openEdit} {chat} originalImg={chat.img} />
 </main>
