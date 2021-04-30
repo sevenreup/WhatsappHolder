@@ -2,6 +2,9 @@ import io from 'socket.io-client';
 import {
     writable
 } from 'svelte/store';
+import {
+    activeChat
+} from '.';
 
 const socket = io('http://localhost:8069')
 
@@ -39,6 +42,10 @@ socket.on('all-chats', (argd) => {
     console.log('received all chats', argd);
 })
 
+socket.on('chat', (args) => {
+    activeChat.set(args)
+})
+
 socket.on('all-messages', (argd) => {
     messages.set(argd)
     console.log('received all messages', argd);
@@ -60,6 +67,10 @@ socket.on('chat-edit-saved', () => {
 
 function getAllChats() {
     socket.emit('getchats')
+}
+
+function getChat(id) {
+    socket.emit('getchat', id)
 }
 
 function getAllMessages(id) {
@@ -102,6 +113,7 @@ export {
     allMedia,
     reload,
     getAllChats,
+    getChat,
     getAllMessages,
     sendImportDetails,
     openFileElectron,
