@@ -35,9 +35,9 @@ function initSockets(socket) {
     socket.on('getchats', async function () {
         try {
             const {
-                rows
+                docs
             } = await getChats()
-            socket.emit("all-chats", rows);
+            socket.emit("all-chats", docs);
         } catch (error) {
             console.log(error);
         }

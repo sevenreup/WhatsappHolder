@@ -1,4 +1,4 @@
-<nav class="toolbar flex bg-gray-400">
+<nav class="toolbar flex bg-white shadow-sm">
   <div class="drag-region" />
   <!-- svelte-ignore a11y-missing-attribute -->
   <!-- svelte-ignore a11y-missing-content -->

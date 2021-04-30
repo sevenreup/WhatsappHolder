@@ -40,7 +40,8 @@ async function finishImport({
             name: name,
             img: 'img/placeholder.jpg',
             desc: 'Chat imported from Whatsapp..',
-            users: hash
+            users: hash,
+            date: Date.now()
         })
 
         const data = messages.map(message => {

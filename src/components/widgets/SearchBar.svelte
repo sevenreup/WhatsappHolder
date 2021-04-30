@@ -14,6 +14,7 @@
       withItem
       type="search"
       placeholder="Search"
+      class="w-full"
       bind:value={text}
       on:input={(value, nativeEvent) => {
         console.log({ value, nativeEvent });

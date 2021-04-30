@@ -9,8 +9,15 @@ async function saveImportedChats(data) {
 }
 
 async function getAllChatsDB() {
-    return await chatDB.allDocs({
-        include_docs: true
+    return await chatDB.find({
+        selector: {
+            date: {
+                $gte: null
+            },
+        },
+        sort: [{
+            date: 'desc'
+        }]
     })
 }
 

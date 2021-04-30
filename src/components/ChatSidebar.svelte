@@ -47,13 +47,13 @@
       <div
         class="cursor-pointer rounded-3xl p-2 my-2 chat"
         use:active={{
-          path: `/chat/${item.id}`,
+          path: `/chat/${item._id}`,
           className: "bg-gradient-to-r from-green-400 to-blue-500 text-white",
           inactiveClassName: "",
         }}
         on:click={() => {
-          selected = item.id;
-          push(`/chat/${item.id}`);
+          selected = item._id;
+          push(`/chat/${item._id}`);
         }}
       >
         <div class="w-full flex justify-end">
@@ -61,12 +61,12 @@
         </div>
         <div class="flex">
           <img
-            src={getApiPath(item.doc.img)}
-            alt={item.doc.name}
+            src={getApiPath(item.img)}
+            alt={item.name}
             class="rounded-full w-12 h-12 m-auto"
           />
           <div class="p-1 pl-2">
-            <span class="subtitle-1 font-semibold">{item.doc.name}</span>
+            <span class="subtitle-1 font-semibold">{item.name}</span>
             <span class="text"
               >This is a sample preview message and it view message.</span
             >

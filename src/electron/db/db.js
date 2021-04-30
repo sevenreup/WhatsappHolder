@@ -62,6 +62,11 @@ async function createIndexes() {
         fields: ['isMedia', 'date', 'attachment.ext']
       }
     })
+    await chatDB.createIndex({
+      index: {
+        fields: ['date']
+      }
+    })
   } catch (error) {
     console.log(error);
   }

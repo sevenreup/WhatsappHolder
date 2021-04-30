@@ -38,6 +38,7 @@ socket.on('import-finished', () => {
 })
 
 socket.on('all-chats', (args) => {
+    console.log(args);
     chats.set(args)
 })
 
