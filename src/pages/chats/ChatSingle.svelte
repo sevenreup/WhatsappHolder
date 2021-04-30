@@ -22,7 +22,6 @@ getChat,
   let messagesData = [];
 
   const unsubscribe = activeChat.subscribe((value) => {
-    console.log(value);
     chat = value;
     participants = value.users;
     id = value._id;
@@ -37,7 +36,6 @@ getChat,
   });
 
   onMount(() => {
-    console.log({ params, chat });
     if (chat._id == null && chat._id == undefined) {
       const id = params.chatId;
       getChat(id)

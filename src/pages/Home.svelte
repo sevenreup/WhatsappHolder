@@ -1,6 +1,6 @@
 <script>
   import { onMount } from "svelte";
-  import Router, { location, replace } from "svelte-spa-router";
+  import Router, { location } from "svelte-spa-router";
   import ChatSidebar from "../components/ChatSidebar.svelte";
   import ChatsEmpty from "./chats/ChatsEmpty.svelte";
   import ChatSingle from "./chats/ChatSingle.svelte";
@@ -35,7 +35,6 @@
     <Router
       {routes}
       {prefix}
-      on:routeLoaded={(e) => console.log(e)}
       restoreScrollState={true}
     />
   </section>

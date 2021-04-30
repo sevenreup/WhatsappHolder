@@ -27,7 +27,6 @@
     return {}
   }
 
-console.log(messages);
 </script>
 
 <div class="list flex relative mb-3 h-full p-3 w-full" bind:this={messageList}>

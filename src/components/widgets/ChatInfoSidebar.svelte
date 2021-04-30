@@ -20,7 +20,6 @@ import { getApiPath } from "../../util/appUtil";
 
   let openEdit = false;
 
-  console.log({ chat });
 </script>
 
 <main

@@ -23,7 +23,6 @@
   async function getVideoThumbnail(path) {
     const thumb = await getThumbnails(path, { quality: 0.6 });
     img.src = URL.createObjectURL(thumb[0].blob)
-    console.log(thumb);
   }
 </script>
 

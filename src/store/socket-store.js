@@ -39,7 +39,6 @@ socket.on('import-finished', () => {
 
 socket.on('all-chats', (argd) => {
     chats.set(argd)
-    console.log('received all chats', argd);
 })
 
 socket.on('chat', (args) => {
@@ -48,16 +47,13 @@ socket.on('chat', (args) => {
 
 socket.on('all-messages', (argd) => {
     messages.set(argd)
-    console.log('received all messages', argd);
 })
 
 socket.on('preview-chat-media', data => {
-    console.log(data);
     sideInfo.set(data)
 })
 
 socket.on('chat-media-all', data => {
-    console.log(data);
     allMedia.set(data)
 })
 
