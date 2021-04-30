@@ -9,7 +9,7 @@
     getChatMediaPreview,
     getAllMessages,
     messages,
-getChat,
+    getChat,
   } from "../../store/socket-store";
   export let params = {};
 
@@ -38,9 +38,15 @@ getChat,
   onMount(() => {
     if (chat._id == null && chat._id == undefined) {
       const id = params.chatId;
-      getChat(id)
+      getChat(id);
     }
   });
+
+  $: if (params) {
+    const id = params.chatId;
+    window.scrollTo(0, 0);
+    getChat(id);
+  }
 </script>
 
 <main class="h-full overflow-hidden flex" transition:fade>

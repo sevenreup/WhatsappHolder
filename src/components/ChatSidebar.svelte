@@ -5,7 +5,6 @@
   import InfiniteScroll from "./widgets/list/InfiniteScroll.svelte";
   import SearchBar from "./widgets/SearchBar.svelte";
   import { getAllChats, chats } from "../store/socket-store";
-  import { activeChat } from "../store";
   import { getApiPath } from "../util/appUtil";
 
   async function fetchData() {
@@ -39,7 +38,6 @@
         }}
         on:click={() => {
           selected = item.id;
-          activeChat.set(item.doc);
           push(`/chat/${item.id}`);
         }}
       >
