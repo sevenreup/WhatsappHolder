@@ -7,7 +7,8 @@ const {
     getMessages,
     getAllMedia,
     editChat,
-    getChat
+    getChat,
+    search
 } = require("./chatHandler");
 const {
     finishImport
@@ -102,12 +103,33 @@ function initSockets(socket) {
         }
     })
 
-    socket.on('save-chat-edits', async ({data, id}) => {
+    socket.on('save-chat-edits', async ({
+        data,
+        id
+    }) => {
         try {
             const value = await editChat(id, data)
             socket.emit("chat-edit-saved", value);
         } catch (error) {
-            console.log({loc: "save-edits", error});
+            console.log({
+                loc: "save-edits",
+                error
+            });
+        }
+    })
+
+    socket.on('search', async ({
+        text,
+        descending
+    }) => {
+        try {
+            const {
+                rows
+            } = await search(text, descending)
+
+            socket.emit("search-results", rows);
+        } catch (error) {
+            console.log(error);
         }
     })
 }

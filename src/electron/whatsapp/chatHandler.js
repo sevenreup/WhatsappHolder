@@ -9,7 +9,8 @@ const {
     getChatDB,
     updateChat,
     saveImportedChats,
-    getAllChatsDB
+    getAllChatsDB,
+    searchDB
 } = require("../db/ChatDB")
 
 async function getChats() {
@@ -61,6 +62,10 @@ async function saveImportedMessages(messages) {
     return saveImportedMessagesDB(messages)
 }
 
+async function search(text, descending) {
+    return await searchDB(text, descending)
+}
+
 module.exports = {
     getChats,
     getChat,
@@ -72,5 +77,6 @@ module.exports = {
     saveImportedMessages,
     updateMediaFolder,
     editChat,
-    updateImage
+    updateImage,
+    search
 }

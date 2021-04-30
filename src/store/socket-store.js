@@ -25,9 +25,9 @@ socket.on('reconnect', () => {
     socketID.set(socket.id)
 })
 
-socket.on('file-upload', (argd) => {
-    uploadProgress.set(argd)
-    console.log('started processing the file', argd);
+socket.on('file-upload', (args) => {
+    uploadProgress.set(args)
+    console.log('started processing the file', args);
 })
 
 socket.on('import-finished', () => {
@@ -37,16 +37,21 @@ socket.on('import-finished', () => {
     console.log('import-finished');
 })
 
-socket.on('all-chats', (argd) => {
-    chats.set(argd)
+socket.on('all-chats', (args) => {
+    chats.set(args)
 })
 
 socket.on('chat', (args) => {
     activeChat.set(args)
 })
 
-socket.on('all-messages', (argd) => {
-    messages.set(argd)
+socket.on('all-messages', (args) => {
+    messages.set(args)
+})
+
+socket.on('search-results', (args) => {
+    console.log(args);
+    chats.set(args)
 })
 
 socket.on('preview-chat-media', data => {
@@ -100,6 +105,13 @@ function saveChatEdits(chat) {
     socket.emit('save-chat-edits', chat)
 }
 
+function searchChat(text) {
+    socket.emit('search', {
+        text: text,
+        descending: true
+    })
+}
+
 export {
     socketID,
     uploadProgress,
@@ -117,4 +129,5 @@ export {
     getChatMediaPreview,
     getAllMedia,
     saveChatEdits,
+    searchChat
 }

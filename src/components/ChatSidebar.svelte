@@ -4,7 +4,7 @@
   import { push, replace } from "svelte-spa-router";
   import InfiniteScroll from "./widgets/list/InfiniteScroll.svelte";
   import SearchBar from "./widgets/SearchBar.svelte";
-  import { getAllChats, chats } from "../store/socket-store";
+  import { getAllChats, chats, searchChat } from "../store/socket-store";
   import { getApiPath } from "../util/appUtil";
 
   async function fetchData() {
@@ -23,10 +23,25 @@
   let selected;
   let chatList;
   let sidebar;
+  let text = "";
+
+  function search(text) {
+    if (text.length >= 2) {
+      searchChat(text);
+    }
+  }
+
+  $: search(text);
 </script>
 
 <nav bind:clientWidth={sidebar}>
-  <SearchBar width={sidebar} />
+  <SearchBar
+    width={sidebar}
+    bind:text
+    on:clear={() => {
+      getAllChats();
+    }}
+  />
   <div class="p-9 mt-5" bind:this={chatList}>
     {#each data as item}
       <div

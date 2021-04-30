@@ -20,6 +20,35 @@ const contactsDB = PouchDB.defaults({
   prefix: path.join(dbPath, 'db/')
 })('contacts');
 
+const ddoc = {
+  _id: '_design/full_text_search',
+  views: {
+    by_name: {
+      map: function (doc) {
+        const regex = /[\s\.;]+/gi;
+        ['name'].forEach(field => {
+          if (doc[field]) {
+            const words = doc[field].replaceAll(regex, ',').split(',')
+            words.forEach(word => {
+              word = word.trim();
+              if (word.length) {
+                emit(word.toLocaleLowerCase(), [field, word]);
+              }
+            });
+          }
+
+        })
+      }.toString()
+    }
+  }
+};
+
+chatDB.put(ddoc).then(function () {
+  // success!
+}).catch(function (err) {
+  console.log(err);
+  // chatDB.remove('_design/full_text_search')
+});
 
 async function createIndexes() {
   try {

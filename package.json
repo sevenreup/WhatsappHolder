@@ -72,6 +72,7 @@
     "svelte-video-player": "^1.2.5",
     "unzipper": "^0.10.11",
     "uuid": "^8.3.2",
+    "svelte-feather-icons": "^3.3.0",
     "video-metadata-thumbnails": "^1.0.22",
     "whatsapp-chat-parser": "^3.1.0"
   },
