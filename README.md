@@ -4,6 +4,10 @@ So this project just started because I have some random backups of my messages f
 
 The process to get this to work is relatively simple. Export your WhatsApp chat inside the app with or without the media, then import it into the app. This is probably for people who want to keep their important messages and still have a clean chat (😑😑 No idea why you'd want that).
 All messages are kept localy and will be converted to a format the app can use. So you can move those around.
+## Screenshots
+Some previews of how it currently looks
+
+![Screenshot one](/doc/shot1.jpg)
 ## Dev Stuff
 This project is using Svelte for the UI and its running in Electron. You get all the cross platform goodness of Electron.
 ### Setup
